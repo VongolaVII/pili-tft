@@ -8,36 +8,51 @@
 </head>
 <body>
     <div id="game-container">
-        <header>
-            <h1>⚔️ 霹靂神州：天罪自走棋</h1>
-            <div id="player-status">
-                <span>💰 金幣：<strong id="gold">10</strong></span>
-                <span>⭐ 等級：<strong id="level">1</strong></span>
-                <span>❤️ 血量：<strong id="hp">100</strong></span>
+        <!-- 頂部資訊欄 -->
+        <header id="top-bar">
+            <div class="title">⚔️ 霹靂神州：天罪自走棋</div>
+            <div class="stats">
+                <span class="stat-item">💰 金幣: <strong id="gold">10</strong></span>
+                <span class="stat-item">⭐ 等級: <strong id="level">1</strong> (<span id="exp">0/2</span> EXP)</span>
+                <span class="stat-item">❤️ 血量: <strong id="hp">100</strong></span>
             </div>
         </header>
 
-        <!-- 遊戲主舞台 -->
-        <main>
-            <!-- 羈絆狀態欄 -->
-            <div id="traits-panel">
+        <!-- 主遊戲區域 -->
+        <main id="main-stage">
+            <!-- 左側羈絆欄 -->
+            <aside id="synergy-sidebar">
                 <h3>已激活羈絆</h3>
-                <div id="active-traits">尚無 active 羈絆</div>
-            </div>
+                <div id="synergy-list">
+                    <div class="synergy-empty">尚無 active 羈絆</div>
+                </div>
+            </aside>
 
-            <!-- 棋盤區域 -->
-            <div id="board-container">
-                <h3>戰場 (棋盤)</h3>
-                <div id="board" class="grid-board"></div>
-                <h3>備戰區</h3>
-                <div id="bench" class="grid-bench"></div>
-            </div>
+            <!-- 中間棋盤與控制區 -->
+            <section id="board-container">
+                <div class="stage-header">
+                    <span id="stage-title">回合 1-1（準備階段）</span>
+                    <button id="btn-start-battle" onclick="startBattle()">⚔️ 開始戰鬥</button>
+                </div>
+
+                <!-- 六角形棋盤戰場 (4行 7列) -->
+                <div id="hex-board"></div>
+
+                <!-- 備戰區 (9格) -->
+                <div class="bench-section">
+                    <div class="section-title">備戰區</div>
+                    <div id="bench"></div>
+                </div>
+            </section>
         </main>
 
-        <!-- 商店與控制區 -->
-        <footer>
-            <button id="refresh-btn" onclick="refreshShop()">🎲 刷新商店 (2金)</button>
-            <div id="shop" class="shop-cards"></div>
+        <!-- 底部商店與控制區 -->
+        <footer id="shop-container">
+            <div class="shop-controls">
+                <button class="shop-btn" onclick="refreshShop()">🎲 刷新商店 (2金)</button>
+                <button class="shop-btn" onclick="buyExp()">⚡ 購買經驗 (4金)</button>
+            </div>
+            <div id="shop"></div>
         </footer>
     </div>
 
