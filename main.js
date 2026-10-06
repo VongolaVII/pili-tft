@@ -20,6 +20,9 @@ window.onload = () => {
 
     canvas.addEventListener("click", onCanvasClick);
 
+    // 【修正】初始 1-1 不預設放置棄天帝，放 1 費小兵角色（如屈世途）
+    board[3][3] = { ...CHAMPIONS[0], star: 1, isHeadliner: false };
+
     refreshShopCards();
     updateUI();
     drawGame();
@@ -45,7 +48,7 @@ function drawGame() {
         }
     }
 
-    // 2. 繪製備戰區 (9 格) - 調整 Y 軸位置避免標題重疊
+    // 2. 繪製備戰區 (9 格)
     const benchStartY = 335;
     const slotSize = 56;
     const benchStartX = (canvas.width - (9 * (slotSize + 10))) / 2;
@@ -91,13 +94,15 @@ function drawHexagon(x, y, r, fillColor, strokeColor) {
     ctx.stroke();
 }
 
-// 畫棋子單位 (文字 + 星級)
+// 畫棋子單位 (文字 + 星級 + 天命主角光環)
 function drawUnit(x, y, unit) {
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 12px Arial";
+    ctx.fillStyle = unit.isHeadliner ? "#f6ad55" : "#ffffff";
+    ctx.font = unit.isHeadliner ? "bold 12px Arial" : "12px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(unit.name, x, y - 6);
+    
+    const displayName = unit.isHeadliner ? `👑 ${unit.name}` : unit.name;
+    ctx.fillText(displayName, x, y - 6);
 
     ctx.fillStyle = "#f6e05e";
     ctx.font = "11px Arial";
@@ -188,107 +193,69 @@ function checkTripleCombine() {
     }
 }
 
-// 刷新商店英雄卡片
+// --- 【修正機制】等級概率抽卡與天命主角邏輯 ---
+
+// 根據玩家等級按機率抽牌
+function getRandomHeroByLevel(currentLevel) {
+    const rates = DROP_RATES[currentLevel] || DROP_RATES[9];
+    const rand = Math.random() * 100;
+    let cumulative = 0;
+    let targetCost = 1;
+
+    for (let i = 0; i < rates.length; i++) {
+        cumulative += rates[i];
+        if (rand < cumulative) {
+            targetCost = i + 1;
+            break;
+        }
+    }
+
+    const filtered = CHAMPIONS.filter(c => c.cost === targetCost);
+    if (filtered.length === 0) return CHAMPIONS[0];
+    return filtered[Math.floor(Math.random() * filtered.length)];
+}
+
+// 檢查是否已有天命主角
+function hasHeadlinerOnBoardOrBench() {
+    let count = 0;
+    board.forEach(row => row.forEach(u => { if (u && u.isHeadliner) count++; }));
+    bench.forEach(u => { if (u && u.isHeadliner) count++; });
+    return count > 0;
+}
+
+// 刷新商店卡牌
 function refreshShopCards() {
     currentShop = [];
-    for (let i = 0; i < 5; i++) {
-        const hero = CHAMPIONS[Math.floor(Math.random() * CHAMPIONS.length)];
-        currentShop.push({ ...hero });
+
+    // 前 4 格：根據等級概率正常抽卡
+    for (let i = 0; i < 4; i++) {
+        const hero = getRandomHeroByLevel(level);
+        currentShop.push({ ...hero, shopCost: hero.cost, star: 1, isHeadliner: false });
     }
+
+    // 第 5 格 (商店最右側)：天命主角 (Headliner)
+    const alreadyHas = hasHeadlinerOnBoardOrBench();
+    const shouldSpawnHeadliner = !alreadyHas || (Math.random() < 0.25);
+    const slot5Hero = getRandomHeroByLevel(level);
+
+    if (shouldSpawnHeadliner) {
+        currentShop.push({
+            ...slot5Hero,
+            shopCost: slot5Hero.cost * 3, // 買下即 2 星，價格為 3 倍
+            star: 2,
+            isHeadliner: true,
+            extraSynergy: slot5Hero.origin // 額外 +1 門派羈絆
+        });
+    } else {
+        currentShop.push({ ...slot5Hero, shopCost: slot5Hero.cost, star: 1, isHeadliner: false });
+    }
+
     renderShopUI();
 }
 
-// 渲染商店 UI（若已被購買則變灰空置）
+// 渲染商店 UI
 function renderShopUI() {
     const el = document.getElementById("shop-cards");
     el.innerHTML = "";
 
-    currentShop.forEach((hero, index) => {
-        const card = document.createElement("div");
-        
-        if (!hero) {
-            // 已被購買後空置
-            card.className = "card empty-card";
-            card.style.opacity = "0.2";
-            card.style.cursor = "not-allowed";
-            card.innerHTML = `<div class="card-name" style="color:#718096;text-align:center;line-height:50px;">已售出</div>`;
-        } else {
-            card.className = `card cost-${hero.cost}`;
-            card.innerHTML = `
-                <div class="card-name">${hero.name}</div>
-                <div class="card-tag">${hero.origin} / ${hero.class}</div>
-                <div class="card-cost">💰 ${hero.cost}</div>
-            `;
-            card.onclick = () => buyHero(index);
-        }
-        el.appendChild(card);
-    });
-}
-
-// 手動花 2 金刷新商店
-function refreshShop() {
-    if (gold < 2) return alert("金幣不足！");
-    gold -= 2;
-    refreshShopCards();
-    updateUI();
-}
-
-// 購買英雄（買完清空該卡片位置）
-function buyHero(shopIndex) {
-    const hero = currentShop[shopIndex];
-    if (!hero) return; // 已經買過了
-
-    if (gold < hero.cost) return alert("金幣不足！");
-    let emptyI = bench.findIndex(x => x === null);
-    if (emptyI === -1) return alert("備戰區已滿！");
-
-    gold -= hero.cost;
-    bench[emptyI] = { ...hero, star: 1 };
-    
-    // 將商店該卡片設為已售出 (null)
-    currentShop[shopIndex] = null;
-
-    checkTripleCombine();
-    updateUI();
-    renderShopUI();
-    drawGame();
-}
-
-// 購買經驗值
-function buyExp() {
-    if (gold < 4) return alert("金幣不足！");
-    gold -= 4;
-    exp += 4;
-    if (exp >= level * 4) { exp -= level * 4; level++; }
-    updateUI();
-}
-
-// 更新頂部數據 UI
-function updateUI() {
-    document.getElementById("gold").innerText = gold;
-    document.getElementById("level").innerText = level;
-    document.getElementById("exp").innerText = `${exp}/${level * 4}`;
-    document.getElementById("hp").innerText = hp;
-}
-
-// 計算並更新已激活羈絆
-function updateSynergies() {
-    const counts = {};
-    board.forEach(row => row.forEach(u => {
-        if (u) {
-            counts[u.origin] = (counts[u.origin] || 0) + 1;
-            counts[u.class] = (counts[u.class] || 0) + 1;
-        }
-    }));
-
-    const box = document.getElementById("synergies");
-    box.innerHTML = "";
-    let count = 0;
-    for (let k in counts) {
-        count++;
-        box.innerHTML += `<div class="synergy-item"><b>${k}</b>: ${counts[k]}</div>`;
-    }
-    if (count === 0) box.innerHTML = `<div style="color:#718096;font-size:12px;">尚無羈絆</div>`;
-}
-
-function startBattle() { alert("⚔️ 戰鬥準備就緒！"); }
+    currentShop.forEach((hero, index) =>
