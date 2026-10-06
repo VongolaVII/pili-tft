@@ -18,7 +18,7 @@
             </div>
         </header>
 
-        <!-- 主主體區 -->
+        <!-- 主體區 -->
         <main id="main-content">
             <!-- 左側羈絆列表 -->
             <aside id="synergy-box">
@@ -30,7 +30,7 @@
             <section id="canvas-container">
                 <div class="control-row">
                     <span id="stage-info">回合 1-1（準備階段）</span>
-                    <button id="btn-battle" onclick="startBattle()">⚔️️ 開始戰鬥</button>
+                    <button id="btn-battle" onclick="startBattle()">⚔ 開始戰鬥</button>
                 </div>
                 <!-- Canvas 畫布區 -->
                 <canvas id="gameCanvas" width="800" height="420"></canvas>
@@ -47,6 +47,7 @@
         </footer>
     </div>
 
+    <!-- 💡 確保 data.js 載入成功再載入 main.js -->
     <script src="data.js"></script>
     <script src="main.js"></script>
 </body>
