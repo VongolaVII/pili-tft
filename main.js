@@ -20,7 +20,13 @@ window.onload = () => {
 
     canvas.addEventListener("click", onCanvasClick);
 
-    // 【修正】初始 1-1 不預設放置棄天帝，放 1 費小兵角色（如屈世途）
+    // 強制重置遊戲初始數值 (1-1 回合)
+    level = 1;
+    exp = 0;
+    gold = 10;
+    hp = 100;
+
+    // 開局放置 1 費小兵角色，避免出現高費神將
     board[3][3] = { ...CHAMPIONS[0], star: 1, isHeadliner: false };
 
     refreshShopCards();
@@ -193,69 +199,15 @@ function checkTripleCombine() {
     }
 }
 
-// --- 【修正機制】等級概率抽卡與天命主角邏輯 ---
+// --- 【嚴格修正】等級概率抽卡與天命主角邏輯 ---
 
-// 根據玩家等級按機率抽牌
+// 根據玩家等級按機率抽牌（嚴格限制費用上限）
 function getRandomHeroByLevel(currentLevel) {
-    const rates = DROP_RATES[currentLevel] || DROP_RATES[9];
-    const rand = Math.random() * 100;
-    let cumulative = 0;
-    let targetCost = 1;
-
-    for (let i = 0; i < rates.length; i++) {
-        cumulative += rates[i];
-        if (rand < cumulative) {
-            targetCost = i + 1;
-            break;
-        }
-    }
-
-    const filtered = CHAMPIONS.filter(c => c.cost === targetCost);
-    if (filtered.length === 0) return CHAMPIONS[0];
-    return filtered[Math.floor(Math.random() * filtered.length)];
-}
-
-// 檢查是否已有天命主角
-function hasHeadlinerOnBoardOrBench() {
-    let count = 0;
-    board.forEach(row => row.forEach(u => { if (u && u.isHeadliner) count++; }));
-    bench.forEach(u => { if (u && u.isHeadliner) count++; });
-    return count > 0;
-}
-
-// 刷新商店卡牌
-function refreshShopCards() {
-    currentShop = [];
-
-    // 前 4 格：根據等級概率正常抽卡
-    for (let i = 0; i < 4; i++) {
-        const hero = getRandomHeroByLevel(level);
-        currentShop.push({ ...hero, shopCost: hero.cost, star: 1, isHeadliner: false });
-    }
-
-    // 第 5 格 (商店最右側)：天命主角 (Headliner)
-    const alreadyHas = hasHeadlinerOnBoardOrBench();
-    const shouldSpawnHeadliner = !alreadyHas || (Math.random() < 0.25);
-    const slot5Hero = getRandomHeroByLevel(level);
-
-    if (shouldSpawnHeadliner) {
-        currentShop.push({
-            ...slot5Hero,
-            shopCost: slot5Hero.cost * 3, // 買下即 2 星，價格為 3 倍
-            star: 2,
-            isHeadliner: true,
-            extraSynergy: slot5Hero.origin // 額外 +1 門派羈絆
-        });
-    } else {
-        currentShop.push({ ...slot5Hero, shopCost: slot5Hero.cost, star: 1, isHeadliner: false });
-    }
-
-    renderShopUI();
-}
-
-// 渲染商店 UI
-function renderShopUI() {
-    const el = document.getElementById("shop-cards");
-    el.innerHTML = "";
-
-    currentShop.forEach((hero, index) =>
+    const lvl = Math.max(1, Math.min(currentLevel || 1, 9));
+    
+    // 安全性備援：若未載入 DROP_RATES，預設使用 1 等權重
+    const rates = (typeof DROP_RATES !== 'undefined' && DROP_RATES[lvl]) 
+        ? DROP_RATES[lvl] 
+        : [100, 0, 0, 0, 0, 0];
+    
+    const rand = Math
