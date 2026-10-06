@@ -16,18 +16,21 @@ const HEX_RADIUS = 32;
 
 window.onload = () => {
     canvas = document.getElementById("gameCanvas");
+    if (!canvas) return;
     ctx = canvas.getContext("2d");
 
     canvas.addEventListener("click", onCanvasClick);
 
-    // 強制重置遊戲初始數值 (1-1 回合)
+    // 重置初始數值
     level = 1;
     exp = 0;
     gold = 10;
     hp = 100;
 
-    // 開局放置 1 費小兵角色，避免出現高費神將
-    board[3][3] = { ...CHAMPIONS[0], star: 1, isHeadliner: false };
+    // 開局若 CHAMPIONS 存在，預設放 1 位角色
+    if (typeof CHAMPIONS !== 'undefined' && CHAMPIONS.length > 0) {
+        board[3][3] = { ...CHAMPIONS[0], star: 1, isHeadliner: false };
+    }
 
     refreshShopCards();
     updateUI();
@@ -36,6 +39,7 @@ window.onload = () => {
 
 // 繪製整張畫布 (Hex 棋盤 + 備戰區)
 function drawGame() {
+    if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // 1. 繪製 Hex 棋盤 (4x7)
@@ -73,7 +77,11 @@ function drawGame() {
         ctx.strokeStyle = isSelected ? "#fff" : "#3b4261";
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.roundRect(x, y, slotSize, slotSize, 6);
+        if (ctx.roundRect) {
+            ctx.roundRect(x, y, slotSize, slotSize, 6);
+        } else {
+            ctx.rect(x, y, slotSize, slotSize);
+        }
         ctx.fill();
         ctx.stroke();
 
@@ -100,8 +108,9 @@ function drawHexagon(x, y, r, fillColor, strokeColor) {
     ctx.stroke();
 }
 
-// 畫棋子單位 (文字 + 星級 + 天命主角光環)
+// 畫棋子單位
 function drawUnit(x, y, unit) {
+    if (!unit) return;
     ctx.fillStyle = unit.isHeadliner ? "#f6ad55" : "#ffffff";
     ctx.font = unit.isHeadliner ? "bold 12px Arial" : "12px Arial";
     ctx.textAlign = "center";
@@ -174,7 +183,7 @@ function handleSelect(target) {
     drawGame();
 }
 
-// 三合一自動升星 (合成 2 星或 3 星)
+// 自動合成
 function checkTripleCombine() {
     const list = [];
     bench.forEach((u, i) => u && list.push({ u, type: 'bench', i }));
@@ -199,15 +208,185 @@ function checkTripleCombine() {
     }
 }
 
-// --- 【嚴格修正】等級概率抽卡與天命主角邏輯 ---
-
-// 根據玩家等級按機率抽牌（嚴格限制費用上限）
+// --- 【超級防呆】抽卡邏輯 ---
 function getRandomHeroByLevel(currentLevel) {
+    if (typeof CHAMPIONS === 'undefined' || CHAMPIONS.length === 0) {
+        return { id: 'default', name: '無角色', cost: 1, origin: '無', class: '無' };
+    }
+
     const lvl = Math.max(1, Math.min(currentLevel || 1, 9));
     
-    // 安全性備援：若未載入 DROP_RATES，預設使用 1 等權重
+    // 預設 1 等概率 [100%, 0, 0, 0, 0, 0]
+    const defaultRates = [100, 0, 0, 0, 0, 0];
     const rates = (typeof DROP_RATES !== 'undefined' && DROP_RATES[lvl]) 
         ? DROP_RATES[lvl] 
-        : [100, 0, 0, 0, 0, 0];
+        : defaultRates;
     
-    const rand = Math
+    const rand = Math.random() * 100;
+    let cumulative = 0;
+    let targetCost = 1;
+
+    for (let i = 0; i < rates.length; i++) {
+        cumulative += rates[i];
+        if (rand < cumulative) {
+            targetCost = i + 1;
+            break;
+        }
+    }
+
+    let filtered = CHAMPIONS.filter(c => c.cost === targetCost);
+    if (filtered.length === 0) {
+        filtered = CHAMPIONS.filter(c => c.cost === 1);
+    }
+    if (filtered.length === 0) {
+        filtered = CHAMPIONS; // 極致保底
+    }
+
+    return filtered[Math.floor(Math.random() * filtered.length)];
+}
+
+function hasHeadlinerOnBoardOrBench() {
+    let count = 0;
+    board.forEach(row => row.forEach(u => { if (u && u.isHeadliner) count++; }));
+    bench.forEach(u => { if (u && u.isHeadliner) count++; });
+    return count > 0;
+}
+
+function refreshShopCards() {
+    currentShop = [];
+
+    for (let i = 0; i < 4; i++) {
+        const hero = getRandomHeroByLevel(level);
+        currentShop.push({ ...hero, shopCost: hero.cost, star: 1, isHeadliner: false });
+    }
+
+    const alreadyHas = hasHeadlinerOnBoardOrBench();
+    const shouldSpawnHeadliner = !alreadyHas || (Math.random() < 0.25);
+    const slot5Hero = getRandomHeroByLevel(level);
+
+    if (shouldSpawnHeadliner) {
+        currentShop.push({
+            ...slot5Hero,
+            shopCost: slot5Hero.cost * 3,
+            star: 2,
+            isHeadliner: true,
+            extraSynergy: slot5Hero.origin
+        });
+    } else {
+        currentShop.push({ ...slot5Hero, shopCost: slot5Hero.cost, star: 1, isHeadliner: false });
+    }
+
+    renderShopUI();
+}
+
+function renderShopUI() {
+    const el = document.getElementById("shop-cards");
+    if (!el) return;
+    el.innerHTML = "";
+
+    currentShop.forEach((hero, index) => {
+        const card = document.createElement("div");
+        
+        if (!hero) {
+            card.className = "card empty-card";
+            card.style.opacity = "0.2";
+            card.style.cursor = "not-allowed";
+            card.innerHTML = `<div class="card-name" style="color:#718096;text-align:center;line-height:50px;">已售出</div>`;
+        } else {
+            const isHL = hero.isHeadliner;
+            const costClass = Math.min(hero.cost || 1, 5);
+            card.className = `card cost-${costClass} ${isHL ? 'headliner-card' : ''}`;
+            
+            const hlBadge = isHL ? `<span style="color:#f6ad55;font-weight:bold;">👑天命主角</span>` : '';
+            const extraTag = isHL ? `<span style="color:#f6ad55;"> (${hero.origin} +1)</span>` : '';
+
+            card.innerHTML = `
+                <div class="card-name">${hero.name} ${hlBadge}</div>
+                <div class="card-tag">${hero.origin}${extraTag} / ${hero.class}</div>
+                <div class="card-cost">💰 ${hero.shopCost || hero.cost}</div>
+            `;
+            card.onclick = () => buyHero(index);
+        }
+        el.appendChild(card);
+    });
+}
+
+function refreshShop() {
+    if (gold < 2) return alert("金幣不足！");
+    gold -= 2;
+    refreshShopCards();
+    updateUI();
+}
+
+function buyHero(shopIndex) {
+    const hero = currentShop[shopIndex];
+    if (!hero) return;
+
+    const buyCost = hero.shopCost || hero.cost;
+    if (gold < buyCost) return alert("金幣不足！");
+    
+    let emptyI = bench.findIndex(x => x === null);
+    if (emptyI === -1) return alert("備戰區已滿！");
+
+    gold -= buyCost;
+    bench[emptyI] = { 
+        ...hero, 
+        star: hero.star || 1, 
+        isHeadliner: hero.isHeadliner || false 
+    };
+    
+    currentShop[shopIndex] = null;
+
+    checkTripleCombine();
+    updateUI();
+    renderShopUI();
+    updateSynergies();
+    drawGame();
+}
+
+function buyExp() {
+    if (gold < 4) return alert("金幣不足！");
+    gold -= 4;
+    exp += 4;
+    if (exp >= level * 4) { exp -= level * 4; level++; }
+    updateUI();
+}
+
+function updateUI() {
+    const g = document.getElementById("gold");
+    const l = document.getElementById("level");
+    const e = document.getElementById("exp");
+    const h = document.getElementById("hp");
+
+    if (g) g.innerText = gold;
+    if (l) l.innerText = level;
+    if (e) e.innerText = `${exp}/${level * 4}`;
+    if (h) h.innerText = hp;
+}
+
+function updateSynergies() {
+    const counts = {};
+
+    board.forEach(row => row.forEach(u => {
+        if (u) {
+            counts[u.origin] = (counts[u.origin] || 0) + 1;
+            counts[u.class] = (counts[u.class] || 0) + 1;
+
+            if (u.isHeadliner && u.extraSynergy) {
+                counts[u.extraSynergy] = (counts[u.extraSynergy] || 0) + 1;
+            }
+        }
+    }));
+
+    const box = document.getElementById("synergies");
+    if (!box) return;
+    box.innerHTML = "";
+    let count = 0;
+    for (let k in counts) {
+        count++;
+        box.innerHTML += `<div class="synergy-item"><b>${k}</b>: ${counts[k]}</div>`;
+    }
+    if (count === 0) box.innerHTML = `<div style="color:#718096;font-size:12px;">尚無羈絆</div>`;
+}
+
+function startBattle() { alert("⚔️ 戰鬥準備就緒！"); }
