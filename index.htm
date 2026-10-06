@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>霹靂神州：天罪自走棋</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <header>
+            <h1>⚔️ 霹靂神州：天罪自走棋</h1>
+            <div id="player-status">
+                <span>💰 金幣：<strong id="gold">10</strong></span>
+                <span>⭐ 等級：<strong id="level">1</strong></span>
+                <span>❤️ 血量：<strong id="hp">100</strong></span>
+            </div>
+        </header>
+
+        <!-- 遊戲主舞台 -->
+        <main>
+            <!-- 羈絆狀態欄 -->
+            <div id="traits-panel">
+                <h3>已激活羈絆</h3>
+                <div id="active-traits">尚無 active 羈絆</div>
+            </div>
+
+            <!-- 棋盤區域 -->
+            <div id="board-container">
+                <h3>戰場 (棋盤)</h3>
+                <div id="board" class="grid-board"></div>
+                <h3>備戰區</h3>
+                <div id="bench" class="grid-bench"></div>
+            </div>
+        </main>
+
+        <!-- 商店與控制區 -->
+        <footer>
+            <button id="refresh-btn" onclick="refreshShop()">🎲 刷新商店 (2金)</button>
+            <div id="shop" class="shop-cards"></div>
+        </footer>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
