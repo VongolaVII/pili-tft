@@ -2,6 +2,9 @@
 let gold = 10, level = 1, exp = 0, hp = 100;
 let selected = null; // { type: 'bench'|'board', index/r/c }
 
+// 商店當前的 5 張卡牌資料
+let currentShop = [null, null, null, null, null];
+
 // 狀態陣列
 const BOARD_ROWS = 4, BOARD_COLS = 7;
 let board = Array.from({ length: BOARD_ROWS }, () => Array(BOARD_COLS).fill(null));
@@ -27,7 +30,7 @@ function drawGame() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // 1. 繪製 Hex 棋盤 (4x7)
-    const startX = 130, startY = 60;
+    const startX = 130, startY = 50;
     for (let r = 0; r < BOARD_ROWS; r++) {
         for (let c = 0; c < BOARD_COLS; c++) {
             let x = startX + c * (HEX_RADIUS * 1.75);
@@ -42,13 +45,14 @@ function drawGame() {
         }
     }
 
-    // 2. 繪製備戰區 (9 格)
-    const benchStartY = 330;
+    // 2. 繪製備戰區 (9 格) - 調整 Y 軸位置避免標題重疊
+    const benchStartY = 335;
     const slotSize = 56;
     const benchStartX = (canvas.width - (9 * (slotSize + 10))) / 2;
 
     ctx.fillStyle = "#a0aec0";
-    ctx.font = "12px Arial";
+    ctx.font = "bold 12px Arial";
+    ctx.textAlign = "left";
     ctx.fillText("【 備 戰 區 】", 20, benchStartY - 10);
 
     for (let i = 0; i < 9; i++) {
@@ -87,37 +91,29 @@ function drawHexagon(x, y, r, fillColor, strokeColor) {
     ctx.stroke();
 }
 
-// 畫棋子單位 (文字 + 星級 + 血條)
+// 畫棋子單位 (文字 + 星級)
 function drawUnit(x, y, unit) {
-    // 英雄名稱
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 12px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(unit.name, x, y - 4);
+    ctx.fillText(unit.name, x, y - 6);
 
-    // 星級
     ctx.fillStyle = "#f6e05e";
-    ctx.font = "10px Arial";
+    ctx.font = "11px Arial";
     ctx.fillText("⭐".repeat(unit.star || 1), x, y + 10);
-
-    // 小血條
-    ctx.fillStyle = "#4a5568";
-    ctx.fillRect(x - 18, y + 18, 36, 4);
-    ctx.fillStyle = "#48bb78";
-    ctx.fillRect(x - 18, y + 18, 36, 4);
 }
 
-// 點擊事件監聽
+// 點擊 Canvas 事件
 function onCanvasClick(e) {
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
 
-    // 檢查點擊備戰區
-    const benchStartY = 330, slotSize = 56;
+    const benchStartY = 335, slotSize = 56;
     const benchStartX = (canvas.width - (9 * (slotSize + 10))) / 2;
 
+    // 檢查點擊備戰區
     if (my >= benchStartY && my <= benchStartY + slotSize) {
         for (let i = 0; i < 9; i++) {
             let x = benchStartX + i * (slotSize + 10);
@@ -129,7 +125,7 @@ function onCanvasClick(e) {
     }
 
     // 檢查點擊 Hex 棋盤
-    const startX = 130, startY = 60;
+    const startX = 130, startY = 50;
     for (let r = 0; r < BOARD_ROWS; r++) {
         for (let c = 0; c < BOARD_COLS; c++) {
             let x = startX + c * (HEX_RADIUS * 1.75);
@@ -145,13 +141,12 @@ function onCanvasClick(e) {
     }
 }
 
-// 選擇/移動邏輯
+// 選擇與放置英雄
 function handleSelect(target) {
     if (!selected) {
         let unit = target.type === 'bench' ? bench[target.i] : board[target.r][target.c];
         if (unit) selected = target;
     } else {
-        // 交換位置
         let u1 = selected.type === 'bench' ? bench[selected.i] : board[selected.r][selected.c];
         let u2 = target.type === 'bench' ? bench[target.i] : board[target.r][target.c];
 
@@ -168,7 +163,7 @@ function handleSelect(target) {
     drawGame();
 }
 
-// 三合一自動升星
+// 三合一自動升星 (合成 2 星或 3 星)
 function checkTripleCombine() {
     const list = [];
     bench.forEach((u, i) => u && list.push({ u, type: 'bench', i }));
@@ -193,24 +188,44 @@ function checkTripleCombine() {
     }
 }
 
-// 商店邏輯
+// 刷新商店英雄卡片
 function refreshShopCards() {
-    const el = document.getElementById("shop-cards");
-    el.innerHTML = "";
+    currentShop = [];
     for (let i = 0; i < 5; i++) {
         const hero = CHAMPIONS[Math.floor(Math.random() * CHAMPIONS.length)];
-        const card = document.createElement("div");
-        card.className = `card cost-${hero.cost}`;
-        card.innerHTML = `
-            <div class="card-name">${hero.name}</div>
-            <div class="card-tag">${hero.origin} / ${hero.class}</div>
-            <div class="card-cost">💰 ${hero.cost}</div>
-        `;
-        card.onclick = () => buyHero(hero);
-        el.appendChild(card);
+        currentShop.push({ ...hero });
     }
+    renderShopUI();
 }
 
+// 渲染商店 UI（若已被購買則變灰空置）
+function renderShopUI() {
+    const el = document.getElementById("shop-cards");
+    el.innerHTML = "";
+
+    currentShop.forEach((hero, index) => {
+        const card = document.createElement("div");
+        
+        if (!hero) {
+            // 已被購買後空置
+            card.className = "card empty-card";
+            card.style.opacity = "0.2";
+            card.style.cursor = "not-allowed";
+            card.innerHTML = `<div class="card-name" style="color:#718096;text-align:center;line-height:50px;">已售出</div>`;
+        } else {
+            card.className = `card cost-${hero.cost}`;
+            card.innerHTML = `
+                <div class="card-name">${hero.name}</div>
+                <div class="card-tag">${hero.origin} / ${hero.class}</div>
+                <div class="card-cost">💰 ${hero.cost}</div>
+            `;
+            card.onclick = () => buyHero(index);
+        }
+        el.appendChild(card);
+    });
+}
+
+// 手動花 2 金刷新商店
 function refreshShop() {
     if (gold < 2) return alert("金幣不足！");
     gold -= 2;
@@ -218,18 +233,28 @@ function refreshShop() {
     updateUI();
 }
 
-function buyHero(hero) {
+// 購買英雄（買完清空該卡片位置）
+function buyHero(shopIndex) {
+    const hero = currentShop[shopIndex];
+    if (!hero) return; // 已經買過了
+
     if (gold < hero.cost) return alert("金幣不足！");
     let emptyI = bench.findIndex(x => x === null);
     if (emptyI === -1) return alert("備戰區已滿！");
 
     gold -= hero.cost;
     bench[emptyI] = { ...hero, star: 1 };
+    
+    // 將商店該卡片設為已售出 (null)
+    currentShop[shopIndex] = null;
+
     checkTripleCombine();
     updateUI();
+    renderShopUI();
     drawGame();
 }
 
+// 購買經驗值
 function buyExp() {
     if (gold < 4) return alert("金幣不足！");
     gold -= 4;
@@ -238,6 +263,7 @@ function buyExp() {
     updateUI();
 }
 
+// 更新頂部數據 UI
 function updateUI() {
     document.getElementById("gold").innerText = gold;
     document.getElementById("level").innerText = level;
@@ -245,6 +271,7 @@ function updateUI() {
     document.getElementById("hp").innerText = hp;
 }
 
+// 計算並更新已激活羈絆
 function updateSynergies() {
     const counts = {};
     board.forEach(row => row.forEach(u => {
