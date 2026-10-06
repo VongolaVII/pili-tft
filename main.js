@@ -1,219 +1,243 @@
-// 遊戲狀態
-let gold = 10;
-let level = 1;
-let exp = 0;
-let hp = 100;
-let selectedSlot = null; // 當前選取的備戰區或棋盤格 { type: 'bench'|'board', index/row/col }
+// 遊戲數據與狀態
+let gold = 10, level = 1, exp = 0, hp = 100;
+let selected = null; // { type: 'bench'|'board', index/r/c }
 
-// 棋盤狀態 (4行 7列)
-const BOARD_ROWS = 4;
-const BOARD_COLS = 7;
-let boardState = Array.from({ length: BOARD_ROWS }, () => Array(BOARD_COLS).fill(null));
+// 狀態陣列
+const BOARD_ROWS = 4, BOARD_COLS = 7;
+let board = Array.from({ length: BOARD_ROWS }, () => Array(BOARD_COLS).fill(null));
+let bench = new Array(9).fill(null);
 
-// 備戰區狀態 (9格)
-let benchState = new Array(9).fill(null);
+// Canvas
+let canvas, ctx;
+const HEX_RADIUS = 32;
 
-// 初始化遊戲
 window.onload = () => {
-    renderBoard();
-    renderBench();
-    refreshShopFree();
+    canvas = document.getElementById("gameCanvas");
+    ctx = canvas.getContext("2d");
+
+    canvas.addEventListener("click", onCanvasClick);
+
+    refreshShopCards();
     updateUI();
+    drawGame();
 };
 
-// 渲染六角形棋盤
-function renderBoard() {
-    const boardEl = document.getElementById("hex-board");
-    boardEl.innerHTML = "";
+// 繪製整張畫布 (Hex 棋盤 + 備戰區)
+function drawGame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // 1. 繪製 Hex 棋盤 (4x7)
+    const startX = 130, startY = 60;
     for (let r = 0; r < BOARD_ROWS; r++) {
-        const rowEl = document.createElement("div");
-        rowEl.className = `hex-row ${r % 2 === 1 ? 'even' : ''}`;
-
         for (let c = 0; c < BOARD_COLS; c++) {
-            const cellEl = document.createElement("div");
-            cellEl.className = "hex-cell";
-            cellEl.dataset.row = r;
-            cellEl.dataset.col = c;
+            let x = startX + c * (HEX_RADIUS * 1.75);
+            let y = startY + r * (HEX_RADIUS * 1.5);
+            if (r % 2 === 1) x += HEX_RADIUS * 0.875;
 
-            if (selectedSlot && selectedSlot.type === 'board' && selectedSlot.row === r && selectedSlot.col === c) {
-                cellEl.classList.add('selected');
-            }
+            const isSelected = selected && selected.type === 'board' && selected.r === r && selected.c === c;
+            drawHexagon(x, y, HEX_RADIUS, isSelected ? "#f6ad55" : "#282d42", "#3b4261");
 
-            const unit = boardState[r][c];
-            if (unit) {
-                cellEl.appendChild(createPieceElement(unit));
-            }
-
-            cellEl.onclick = () => handleCellClick('board', { row: r, col: c });
-            rowEl.appendChild(cellEl);
+            const unit = board[r][c];
+            if (unit) drawUnit(x, y, unit);
         }
-        boardEl.appendChild(rowEl);
     }
-    updateSynergies();
-}
 
-// 渲染備戰區
-function renderBench() {
-    const benchEl = document.getElementById("bench");
-    benchEl.innerHTML = "";
+    // 2. 繪製備戰區 (9 格)
+    const benchStartY = 330;
+    const slotSize = 56;
+    const benchStartX = (canvas.width - (9 * (slotSize + 10))) / 2;
+
+    ctx.fillStyle = "#a0aec0";
+    ctx.font = "12px Arial";
+    ctx.fillText("【 備 戰 區 】", 20, benchStartY - 10);
 
     for (let i = 0; i < 9; i++) {
-        const slotEl = document.createElement("div");
-        slotEl.className = "bench-slot";
-        
-        if (selectedSlot && selectedSlot.type === 'bench' && selectedSlot.index === i) {
-            slotEl.classList.add('selected');
-        }
+        let x = benchStartX + i * (slotSize + 10);
+        let y = benchStartY;
 
-        const unit = benchState[i];
-        if (unit) {
-            slotEl.appendChild(createPieceElement(unit));
-        }
+        const isSelected = selected && selected.type === 'bench' && selected.i === i;
+        ctx.fillStyle = isSelected ? "#f6ad55" : "#212538";
+        ctx.strokeStyle = isSelected ? "#fff" : "#3b4261";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(x, y, slotSize, slotSize, 6);
+        ctx.fill();
+        ctx.stroke();
 
-        slotEl.onclick = () => handleCellClick('bench', { index: i });
-        benchEl.appendChild(slotEl);
+        const unit = bench[i];
+        if (unit) drawUnit(x + slotSize / 2, y + slotSize / 2, unit);
     }
 }
 
-// 創建棋子文字視覺元件
-function createPieceElement(unit) {
-    const pieceEl = document.createElement("div");
-    pieceEl.className = "piece";
-    
-    const stars = "⭐".repeat(unit.star || 1);
-    pieceEl.innerHTML = `
-        <div class="piece-stars">${stars}</div>
-        <div class="piece-name">${unit.name}</div>
-        <div class="hp-bar-bg"><div class="hp-bar-fill"></div></div>
-    `;
-    return pieceEl;
+// 畫六角形
+function drawHexagon(x, y, r, fillColor, strokeColor) {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        let angle = (Math.PI / 3) * i - Math.PI / 6;
+        let hx = x + r * Math.cos(angle);
+        let hy = y + r * Math.sin(angle);
+        if (i === 0) ctx.moveTo(hx, hy);
+        else ctx.lineTo(hx, hy);
+    }
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 2;
+    ctx.stroke();
 }
 
-// 點擊格子處理（移動/放置邏輯）
-function handleCellClick(type, pos) {
-    if (!selectedSlot) {
-        // 第一下點擊：選取棋子
-        const unit = type === 'bench' ? benchState[pos.index] : boardState[pos.row][pos.col];
-        if (unit) {
-            selectedSlot = { type, ...pos };
+// 畫棋子單位 (文字 + 星級 + 血條)
+function drawUnit(x, y, unit) {
+    // 英雄名稱
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 12px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(unit.name, x, y - 4);
+
+    // 星級
+    ctx.fillStyle = "#f6e05e";
+    ctx.font = "10px Arial";
+    ctx.fillText("⭐".repeat(unit.star || 1), x, y + 10);
+
+    // 小血條
+    ctx.fillStyle = "#4a5568";
+    ctx.fillRect(x - 18, y + 18, 36, 4);
+    ctx.fillStyle = "#48bb78";
+    ctx.fillRect(x - 18, y + 18, 36, 4);
+}
+
+// 點擊事件監聽
+function onCanvasClick(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    // 檢查點擊備戰區
+    const benchStartY = 330, slotSize = 56;
+    const benchStartX = (canvas.width - (9 * (slotSize + 10))) / 2;
+
+    if (my >= benchStartY && my <= benchStartY + slotSize) {
+        for (let i = 0; i < 9; i++) {
+            let x = benchStartX + i * (slotSize + 10);
+            if (mx >= x && mx <= x + slotSize) {
+                handleSelect({ type: 'bench', i });
+                return;
+            }
         }
+    }
+
+    // 檢查點擊 Hex 棋盤
+    const startX = 130, startY = 60;
+    for (let r = 0; r < BOARD_ROWS; r++) {
+        for (let c = 0; c < BOARD_COLS; c++) {
+            let x = startX + c * (HEX_RADIUS * 1.75);
+            let y = startY + r * (HEX_RADIUS * 1.5);
+            if (r % 2 === 1) x += HEX_RADIUS * 0.875;
+
+            let dist = Math.hypot(mx - x, my - y);
+            if (dist <= HEX_RADIUS) {
+                handleSelect({ type: 'board', r, c });
+                return;
+            }
+        }
+    }
+}
+
+// 選擇/移動邏輯
+function handleSelect(target) {
+    if (!selected) {
+        let unit = target.type === 'bench' ? bench[target.i] : board[target.r][target.c];
+        if (unit) selected = target;
     } else {
-        // 第二下點擊：移動或交換棋子
-        moveUnit(selectedSlot, { type, ...pos });
-        selectedSlot = null;
+        // 交換位置
+        let u1 = selected.type === 'bench' ? bench[selected.i] : board[selected.r][selected.c];
+        let u2 = target.type === 'bench' ? bench[target.i] : board[target.r][target.c];
+
+        if (selected.type === 'bench') bench[selected.i] = u2;
+        else board[selected.r][selected.c] = u2;
+
+        if (target.type === 'bench') bench[target.i] = u1;
+        else board[target.r][target.c] = u1;
+
+        selected = null;
+        checkTripleCombine();
+        updateSynergies();
     }
-    renderBoard();
-    renderBench();
-}
-
-// 棋子位置交換/移動
-function moveUnit(from, to) {
-    let fromUnit = from.type === 'bench' ? benchState[from.index] : boardState[from.row][from.col];
-    let toUnit = to.type === 'bench' ? benchState[to.index] : boardState[to.row][to.col];
-
-    // 設定新位置
-    if (from.type === 'bench') benchState[from.index] = toUnit;
-    else boardState[from.row][from.col] = toUnit;
-
-    if (to.type === 'bench') benchState[to.index] = fromUnit;
-    else boardState[to.row][to.col] = fromUnit;
-
-    checkTripleCombine(); // 檢查是否可以 3 合 1 升星
+    drawGame();
 }
 
 // 三合一自動升星
 function checkTripleCombine() {
-    const counts = {};
-    // 統計所有相同的英雄與星級
-    const allUnits = [];
-    benchState.forEach((u, i) => u && allUnits.push({ unit: u, type: 'bench', index: i }));
-    boardState.forEach((row, r) => row.forEach((u, c) => u && allUnits.push({ unit: u, type: 'board', row: r, col: c })));
+    const list = [];
+    bench.forEach((u, i) => u && list.push({ u, type: 'bench', i }));
+    board.forEach((row, r) => row.forEach((u, c) => u && list.push({ u, type: 'board', r, c })));
 
-    allUnits.forEach(item => {
-        const key = `${item.unit.id}_${item.unit.star || 1}`;
-        if (!counts[key]) counts[key] = [];
-        counts[key].push(item);
+    const groups = {};
+    list.forEach(item => {
+        let key = `${item.u.id}_${item.u.star || 1}`;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(item);
     });
 
-    for (let key in counts) {
-        if (counts[key].length >= 3) {
-            const [u1, u2, u3] = counts[key];
-            // 刪除前兩個
-            removeUnit(u1);
-            removeUnit(u2);
-            // 升級第三個
-            u3.unit.star = (u3.unit.star || 1) + 1;
-            alert(`🎉 恭喜！${u3.unit.name} 成功合成升至 ${u3.unit.star} 星！`);
-            checkTripleCombine(); // 遞迴檢查是否能連續升星
+    for (let key in groups) {
+        if (groups[key].length >= 3) {
+            const [a, b, c] = groups[key];
+            if (a.type === 'bench') bench[a.i] = null; else board[a.r][a.c] = null;
+            if (b.type === 'bench') bench[b.i] = null; else board[b.r][b.c] = null;
+            c.u.star = (c.u.star || 1) + 1;
+            checkTripleCombine();
             break;
         }
     }
 }
 
-function removeUnit(target) {
-    if (target.type === 'bench') benchState[target.index] = null;
-    else boardState[target.row][target.col] = null;
-}
-
-// 刷新商店
-function refreshShopFree() {
-    generateShopCards();
+// 商店邏輯
+function refreshShopCards() {
+    const el = document.getElementById("shop-cards");
+    el.innerHTML = "";
+    for (let i = 0; i < 5; i++) {
+        const hero = CHAMPIONS[Math.floor(Math.random() * CHAMPIONS.length)];
+        const card = document.createElement("div");
+        card.className = `card cost-${hero.cost}`;
+        card.innerHTML = `
+            <div class="card-name">${hero.name}</div>
+            <div class="card-tag">${hero.origin} / ${hero.class}</div>
+            <div class="card-cost">💰 ${hero.cost}</div>
+        `;
+        card.onclick = () => buyHero(hero);
+        el.appendChild(card);
+    }
 }
 
 function refreshShop() {
     if (gold < 2) return alert("金幣不足！");
     gold -= 2;
-    generateShopCards();
+    refreshShopCards();
     updateUI();
 }
 
-function generateShopCards() {
-    const shopEl = document.getElementById("shop");
-    shopEl.innerHTML = "";
-
-    for (let i = 0; i < 5; i++) {
-        const randHero = CHAMPIONS[Math.floor(Math.random() * CHAMPIONS.length)];
-        const card = document.createElement("div");
-        card.className = `card cost-${randHero.cost}`;
-        card.innerHTML = `
-            <div class="card-title">${randHero.name}</div>
-            <div class="card-tags">${randHero.origin} / ${randHero.class}</div>
-            <div class="card-cost">💰 ${randHero.cost}</div>
-        `;
-        card.onclick = () => buyHero(randHero);
-        shopEl.appendChild(card);
-    }
-}
-
-// 購買英雄
 function buyHero(hero) {
     if (gold < hero.cost) return alert("金幣不足！");
-
-    const emptyIndex = benchState.findIndex(x => x === null);
-    if (emptyIndex === -1) return alert("備戰區已滿！");
+    let emptyI = bench.findIndex(x => x === null);
+    if (emptyI === -1) return alert("備戰區已滿！");
 
     gold -= hero.cost;
-    benchState[emptyIndex] = { ...hero, star: 1 };
-    
+    bench[emptyI] = { ...hero, star: 1 };
     checkTripleCombine();
-    renderBench();
     updateUI();
+    drawGame();
 }
 
-// 購買經驗值
 function buyExp() {
     if (gold < 4) return alert("金幣不足！");
     gold -= 4;
     exp += 4;
-    if (exp >= level * 4) {
-        exp -= level * 4;
-        level++;
-    }
+    if (exp >= level * 4) { exp -= level * 4; level++; }
     updateUI();
 }
 
-// 更新頂部 UI 數據
 function updateUI() {
     document.getElementById("gold").innerText = gold;
     document.getElementById("level").innerText = level;
@@ -221,45 +245,23 @@ function updateUI() {
     document.getElementById("hp").innerText = hp;
 }
 
-// 更新羈絆計算
 function updateSynergies() {
-    const activeOrigins = {};
-    const activeClasses = {};
-
-    boardState.forEach(row => {
-        row.forEach(unit => {
-            if (unit) {
-                activeOrigins[unit.origin] = (activeOrigins[unit.origin] || 0) + 1;
-                activeClasses[unit.class] = (activeClasses[unit.class] || 0) + 1;
-            }
-        });
-    });
-
-    const synergyListEl = document.getElementById("synergy-list");
-    synergyListEl.innerHTML = "";
-
-    let hasSynergy = false;
-    const renderGroup = (dict) => {
-        for (let name in dict) {
-            hasSynergy = true;
-            const item = document.createElement("div");
-            item.className = "synergy-item active";
-            item.innerHTML = `
-                <div class="synergy-name">${name}</div>
-                <div class="synergy-count">當前數量: ${dict[name]}</div>
-            `;
-            synergyListEl.appendChild(item);
+    const counts = {};
+    board.forEach(row => row.forEach(u => {
+        if (u) {
+            counts[u.origin] = (counts[u.origin] || 0) + 1;
+            counts[u.class] = (counts[u.class] || 0) + 1;
         }
-    };
+    }));
 
-    renderGroup(activeOrigins);
-    renderGroup(activeClasses);
-
-    if (!hasSynergy) {
-        synergyListEl.innerHTML = `<div class="synergy-empty" style="color:#718096; font-size:13px;">尚無 active 羈絆</div>`;
+    const box = document.getElementById("synergies");
+    box.innerHTML = "";
+    let count = 0;
+    for (let k in counts) {
+        count++;
+        box.innerHTML += `<div class="synergy-item"><b>${k}</b>: ${counts[k]}</div>`;
     }
+    if (count === 0) box.innerHTML = `<div style="color:#718096;font-size:12px;">尚無羈絆</div>`;
 }
 
-function startBattle() {
-    alert("⚔️ 戰鬥開始！棋子開始發動攻擊...（戰鬥特效與動作邏輯準備中）");
-}
+function startBattle() { alert("⚔️ 戰鬥準備就緒！"); }
