@@ -164,4 +164,213 @@ function handleSelect(target) {
         if (unit) selected = target;
     } else {
         let u1 = selected.type === 'bench' ? bench[selected.i] : board[selected.r][selected.c];
-        let u2 = target.type ===
+        let u2 = target.type === 'bench' ? bench[target.i] : board[target.r][target.c];
+
+        if (selected.type === 'bench' && target.type === 'bench') {
+            bench[selected.i] = u2;
+            bench[target.i] = u1;
+        } else if (selected.type === 'board' && target.type === 'board') {
+            board[selected.r][selected.c] = u2;
+            board[target.r][target.c] = u1;
+        } else if (selected.type === 'bench' && target.type === 'board') {
+            bench[selected.i] = u2;
+            board[target.r][target.c] = u1;
+        } else if (selected.type === 'board' && target.type === 'bench') {
+            board[selected.r][selected.c] = u2;
+            bench[target.i] = u1;
+        }
+        selected = null;
+    }
+    updateSynergies();
+    drawGame();
+}
+
+// 刷新商店卡牌 (考慮等級機率)
+function refreshShopCards() {
+    const rates = DROP_RATES[level] || DROP_RATES[1];
+    currentShop = [];
+
+    for (let i = 0; i < 5; i++) {
+        // 隨機抽費率 (1~6費)
+        let rand = Math.random() * 100;
+        let chosenCost = 1;
+        let cumulative = 0;
+        for (let c = 0; c < rates.length; c++) {
+            cumulative += rates[c];
+            if (rand <= cumulative) {
+                chosenCost = c + 1;
+                break;
+            }
+        }
+
+        // 從選定的費率池隨機抽取角色
+        let pool = CHAMPIONS.filter(ch => ch.cost === chosenCost);
+        if (pool.length === 0) pool = CHAMPIONS.filter(ch => ch.cost === 1);
+        let champ = pool[Math.floor(Math.random() * pool.length)];
+
+        currentShop.push({ ...champ, star: 1 });
+    }
+    renderShop();
+}
+
+// 手動刷新商店
+function refreshShop() {
+    if (gold < 2) return;
+    gold -= 2;
+    refreshShopCards();
+    updateUI();
+}
+
+// 購買經驗值
+function buyExp() {
+    if (gold < 4 || level >= 9) return;
+    gold -= 4;
+    exp += 4;
+    // 升級邏輯
+    const expNeed = [0, 2, 4, 8, 16, 24, 36, 56, 80];
+    if (level < 9 && exp >= expNeed[level]) {
+        exp -= expNeed[level];
+        level++;
+    }
+    updateUI();
+}
+
+// 渲染商店 HTML
+function renderShop() {
+    const shopContainer = document.getElementById("shop-cards");
+    if (!shopContainer) return;
+    shopContainer.innerHTML = "";
+
+    currentShop.forEach((item, index) => {
+        const card = document.createElement("div");
+        card.className = `card cost-${item ? item.cost : 1}`;
+        if (!item) {
+            card.style.opacity = "0.3";
+            card.innerHTML = `<span class="card-name">已售出</span>`;
+        } else {
+            card.innerHTML = `
+                <div class="card-name">${item.name}</div>
+                <div class="card-tag">${item.origin} · ${item.class}</div>
+                <div class="card-cost">💰 ${item.cost} 金</div>
+            `;
+            card.onclick = () => buyChampion(index);
+        }
+        shopContainer.appendChild(card);
+    });
+}
+
+// 購買英雄
+function buyChampion(index) {
+    const item = currentShop[index];
+    if (!item || gold < item.cost) return;
+
+    // 尋找備戰區空位
+    const emptyIndex = bench.findIndex(slot => slot === null);
+    if (emptyIndex === -1) return; // 備戰區已滿
+
+    gold -= item.cost;
+    bench[emptyIndex] = item;
+    currentShop[index] = null; // 標記為已售出
+
+    checkTripleUpgrade(item.name); // 檢查三星三連合成
+    renderShop();
+    updateUI();
+    drawGame();
+}
+
+// 三連合成 (3張1星 -> 1張2星, 3張2星 -> 1張3星)
+function checkTripleUpgrade(name) {
+    for (let star = 1; star <= 2; star++) {
+        let matches = [];
+
+        // 搜尋備戰區
+        bench.forEach((u, i) => {
+            if (u && u.name === name && (u.star || 1) === star) {
+                matches.push({ type: 'bench', i });
+            }
+        });
+
+        // 搜尋棋盤
+        for (let r = 0; r < BOARD_ROWS; r++) {
+            for (let c = 0; c < BOARD_COLS; c++) {
+                let u = board[r][c];
+                if (u && u.name === name && (u.star || 1) === star) {
+                    matches.push({ type: 'board', r, c });
+                }
+            }
+        }
+
+        // 合成升星
+        if (matches.length >= 3) {
+            let keep = matches[0];
+            let remove1 = matches[1];
+            let remove2 = matches[2];
+
+            // 清除被合成掉的兩隻
+            if (remove1.type === 'bench') bench[remove1.i] = null;
+            else board[remove1.r][remove1.c] = null;
+
+            if (remove2.type === 'bench') bench[remove2.i] = null;
+            else board[remove2.r][remove2.c] = null;
+
+            // 升星保留的那隻
+            if (keep.type === 'bench') {
+                bench[keep.i].star = star + 1;
+            } else {
+                board[keep.r][keep.c].star = star + 1;
+            }
+        }
+    }
+}
+
+// 更新頂部 UI 數值
+function updateUI() {
+    document.getElementById("gold").innerText = gold;
+    document.getElementById("level").innerText = level;
+    document.getElementById("hp").innerText = hp;
+
+    const expNeed = [0, 2, 4, 8, 16, 24, 36, 56, 80];
+    document.getElementById("exp").innerText = `${exp}/${expNeed[level] || 'MAX'}`;
+}
+
+// 計算與更新左側已激活羈絆
+function updateSynergies() {
+    const counts = {};
+
+    // 統計棋盤上的角色 (不含備戰區)
+    for (let r = 0; r < BOARD_ROWS; r++) {
+        for (let c = 0; c < BOARD_COLS; c++) {
+            const unit = board[r][c];
+            if (unit) {
+                counts[unit.origin] = (counts[unit.origin] || 0) + 1;
+                counts[unit.class] = (counts[unit.class] || 0) + 1;
+            }
+        }
+    }
+
+    const synergyContainer = document.getElementById("synergies");
+    synergyContainer.innerHTML = "";
+
+    let hasSynergy = false;
+    for (const [key, count] of Object.entries(counts)) {
+        if (SYNERGY_THRESHOLDS[key]) {
+            const activeThreshold = SYNERGY_THRESHOLDS[key].filter(t => count >= t).pop();
+            if (activeThreshold) {
+                hasSynergy = true;
+                const item = document.createElement("div");
+                item.className = "synergy-item";
+                item.innerHTML = `<strong>${key}</strong> (${count}/${activeThreshold})`;
+                synergyContainer.appendChild(item);
+            }
+        }
+    }
+
+    if (!hasSynergy) {
+        synergyContainer.innerHTML = `<div class="empty">尚無羈絆</div>`;
+    }
+}
+
+// 開始戰鬥 (測試回合切換)
+function startBattle() {
+    alert("戰鬥開始！");
+}
