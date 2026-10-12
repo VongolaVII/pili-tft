@@ -54,8 +54,8 @@ document.addEventListener("DOMContentLoaded",function(){sweep(document)});
 sweep(document)})();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>霹靂神州：天罪自走棋</title>
-    <meta name="description" content="以霹靂神州三部曲為主題的 TFT 式自走棋網頁遊戲：角色商店、羈絆陣容、自動戰鬥。">
+    <title>神州侵防戰：霹靂天罪自走棋</title>
+    <meta name="description" content="以霹靂神州三部曲為主題的 TFT 式自走棋網頁遊戲：陣營選擇、神柱侵防、角色商店、羈絆陣容、自動戰鬥。">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -63,14 +63,17 @@ sweep(document)})();</script>
         <!-- ========================= 頂部狀態列 ========================= -->
         <header id="top-bar">
             <div class="logo">
-                ⚔️ 霹靂神州：天罪自走棋
-                <span class="sub">PILI SHENZHOU · AUTO CHESS</span>
+                ⚔️ 神州侵防戰
+                <span class="sub">魔界進攻 · 中原防守 · PILI SHENZHOU</span>
             </div>
             <div class="stats">
+                <span class="faction-pill">⚑ <strong id="faction-tag">未選擇</strong></span>
                 <span>💰 金錢 <strong id="gold">10</strong></span>
                 <span>⭐ 等級 <strong id="level">1</strong> (<span id="exp">0/2</span>)</span>
                 <span>👥 上場 <strong id="unit-count">0/1</strong></span>
                 <span class="hp-box">❤️ 血量 <strong id="hp">100</strong></span>
+                <span class="hp-box">🛡 神柱 <strong id="pillar">100</strong></span>
+                <span class="faction-pill" id="aegis-tag" style="display:none"></span>
             </div>
         </header>
 
@@ -110,14 +113,32 @@ sweep(document)})();</script>
         </footer>
     </div>
 
+    <!-- ========================== 陣營選擇 ========================== -->
+    <div id="faction-modal">
+        <div class="faction-card-wrap">
+            <span class="kicker">PILI SHENZHOU · AUTO CHESS</span>
+            <h2>選擇你的陣營</h2>
+            <p class="f-sub">開局選擇後，<b>俠客招募閣只會出現該陣營的角色與中立散人</b>（中立＝紅樓劍閣、識界靈體）。兩大陣營可招募池各 <b>30 名</b>，完全平均。</p>
+            <div id="faction-options"></div>
+            <p class="f-note">※ <b>中原方</b>＝苦境正道 15 ＋ 玄宗道門 6 ＝ 21 名；<b>魔界方</b>＝異度魔界 12 ＋ 東瀛 6 ＋ 獨立梟雄 3 ＝ 21 名；<b>中立</b>＝紅樓劍閣 4 ＋ 識界靈體 5 ＝ 9 名。雙方＋中立皆為 30 名可招募。</p>
+        </div>
+    </div>
+
     <!-- ========================== 玩法說明 ========================== -->
     <div id="help-modal">
         <div class="help-card">
-            <h2>⚔️ 霹靂神州：天罪自走棋</h2>
-            <p style="color:#9aa0b4;font-size:12.5px;">以霹靂神州三部曲（霹靂神州／蒼玄泣／天罪）為背景的 TFT 式自走棋。集結正道群俠、異度魔界、玄宗道門、東瀛武者與紅樓劍閣，組成最強陣容對抗魔界大軍。</p>
+            <h2>⚔️ 神州侵防戰</h2>
+            <p style="color:#9aa0b4;font-size:12.5px;">官方副標：<b style="color:#e0b64a">魔界進攻 · 中原防守</b>。以霹靂神州三部曲（霹靂神州／蒼玄泣／天罪）為背景的 TFT 式自走棋。魔界進攻打爆最後一條神柱即可入侵中原，中原正道守住魔界進攻即取得勝利。</p>
 
             <h3>🎯 遊戲目標</h3>
-            <p>在 16 個回合中生存下來。每次戰鬥失敗會損失生命值，生命歸零即落敗；撐過全部回合即為勝利。</p>
+            <p>在 16 個回合中守住<b>神州神柱</b>。每次戰鬥失敗會損失生命值，生命歸零即落敗；撐過全部回合即為勝利。</p>
+
+            <h3>🛡 最終防線機制（神州侵防戰主題）</h3>
+            <ul>
+                <li><b>神州神柱（耐久 100）</b>：戰鬥中每當敵方存活，神柱耐久就會持續被削減；耐久越低，代表魔界越接近攻破防線。</li>
+                <li><b>保底降臨</b>：當神柱耐久降至 <b>30 以下</b>（濒臨攻破）時，我方<b>最終防線自動降臨</b>：選擇「中原正道」時由 <b>一頁書 ＋ 風之痕</b> 同時登場；選擇「異度魔界」時則由 <b>棄天帝</b> 作為最終王牌降臨。三位終極角色均為 6 費，數值遠超一般角色。</li>
+                <li><b>終極羈絆</b>：一頁書／風之痕同場觸發「最終防線」（全隊增傷、減傷）；棄天帝登場觸發「最終王牌」（全隊大幅增傷、吸血），助你逆轉戰局。</li>
+            </ul>
 
             <h3>🕹 操作方式</h3>
             <ul>
@@ -125,18 +146,44 @@ sweep(document)})();</script>
                 <li><b>上場部署</b>：點選備戰區角色 → 再點棋盤格子；或直接在棋盤與備戰區之間互點交換。</li>
                 <li><b>取消選取</b>：再次點擊已選角色。</li>
                 <li><b>賣出</b>：按「🗑 賣出角色」進入賣出模式，再點要賣的角色（返還購買金錢）。</li>
-                <li><b>刷新商店</b>：2💰 換一批新卡；<b>買經驗</b>：4💰 提升等級（等級越高，商店出現高費角色機率越大、可上場人數越多）。</li>
+                <li><b>刷新商店</b>：2💰 換一批新卡；<b>買經驗</b>：4💰 獲得 4 點經驗（等級越高，商店出現高費角色機率越大、可上場人數越多）。</li>
                 <li><b>開始戰鬥</b>：部署完成後按紅色按鈕，戰鬥全自動進行。</li>
             </ul>
 
             <h3>⚙️ 核心機制</h3>
             <ul>
-                <li><b>經濟</b>：起始 10 金。每回合基礎收入 5 金 + 存款利息（每 10 金 +1，最多 +5）+ 連勝／連敗獎勵。金錢可刷新商店或買經驗。</li>
-                <li><b>等級與上場人數</b>：等級 1~9，對應可上場人數 1/2/3/4/5/6/7/8/9。買經驗累積滿即升級。</li>
+                <li><b>陣營選擇</b>：開局先選「中原正道」或「異度魔界」。商店只會出現所選陣營的俠客與中立散人（紅樓劍閣、識界靈體），不會出現敵對陣營角色。</li>
+                <li><b>經濟</b>：起始 10 金。每回合基礎收入 5 金 + 存款利息（每 10 金 +1，上限 +5）+ 連勝／連敗獎勵（3 連 +2、5 連 +3）。</li>
+                <li><b>經驗與等級（TFT 式）</b>：每回合自動獲得 <b>4 點經驗</b>；按「⚡ 買經驗」花費 4 金獲得 4 點。等級 1～12，<b>可上場人數 = 等級</b>（上限 12 人）——後期位置大幅增加，不再容易被陣容壓制。</li>
+                <li><b>商店機率</b>：等級越高，高費（4／5／6 費）角色出現率越高（詳見下表）。已移除舊版「回合越多越難抽」的設計。</li>
+                <li><b>三星後不再出現（v10 修正）</b>：當某角色已達 <b>3★（最高星級）</b>，商店將<b>不再抽到該角色</b>，不再佔用卡片格。</li>
                 <li><b>升星合成</b>：集滿 3 張同名同星角色自動合成，1★→2★→3★，能力大幅提升。</li>
+                <li><b>最終防線儲備格</b>：購買 6 費終極角色時，若備戰區已滿，會自動進入棋盤下方的「最終防線儲備格」，下一場戰鬥自動參戰。</li>
                 <li><b>羈絆系統</b>：棋盤上同陣營／同職業的角色達到門檻即觸發效果（見左側面板），是致勝關鍵。</li>
                 <li><b>自動戰鬥</b>：雙方自動尋敵、普攻、集氣施放技能；一方全滅即分出勝負。</li>
             </ul>
+
+            <h3>📈 各等級商店出現機率表</h3>
+            <div class="odds-wrap">
+                <table class="odds">
+                    <thead><tr><th>等級</th><th>1 費</th><th>2 費</th><th>3 費</th><th>4 費</th><th>5 費</th><th>6 費</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td>100</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+                        <tr><td>2</td><td>100</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+                        <tr><td>3</td><td>75</td><td>25</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+                        <tr><td>4</td><td>55</td><td>30</td><td>15</td><td>0</td><td>0</td><td>0</td></tr>
+                        <tr><td>5</td><td>45</td><td>33</td><td>20</td><td>2</td><td>0</td><td>0</td></tr>
+                        <tr><td>6</td><td>30</td><td>40</td><td>25</td><td>5</td><td>0</td><td>0</td></tr>
+                        <tr><td>7</td><td>19</td><td>35</td><td>35</td><td>10</td><td>1</td><td>0</td></tr>
+                        <tr><td>8</td><td>16</td><td>24</td><td>34</td><td>22</td><td>4</td><td>0</td></tr>
+                        <tr><td>9</td><td>9</td><td>18</td><td>26</td><td>35</td><td>11</td><td>1</td></tr>
+                        <tr><td>10</td><td>6</td><td>14</td><td>22</td><td>34</td><td>20</td><td>4</td></tr>
+                        <tr><td>11</td><td>4</td><td>11</td><td>18</td><td>30</td><td>28</td><td>9</td></tr>
+                        <tr><td>12</td><td>2</td><td>8</td><td>14</td><td>26</td><td>35</td><td>15</td></tr>
+                    </tbody>
+                </table>
+                <div class="odds-need">升級所需經驗：Lv2: 0 ｜ Lv3: 2 ｜ Lv4: 4 ｜ Lv5: 8 ｜ Lv6: 12 ｜ Lv7: 16 ｜ Lv8: 20 ｜ Lv9: 24 ｜ Lv10: 28 ｜ Lv11: 32 ｜ Lv12: 36<br>自然經驗：每回合 +4 ｜ 買經驗：4💰 → +4 XP ｜ 起始 10💰</div>
+            </div>
 
             <h3>🏷 羈絆一覽（陣營 / 職業）</h3>
             <p style="font-size:12.5px;">
@@ -147,6 +194,8 @@ sweep(document)})();</script>
                 <span class="tag" style="background:#d53f8c;">紅樓劍閣</span>暴擊
                 <span class="tag" style="background:#38b2ac;">識界靈體</span>增傷
                 <span class="tag" style="background:#805ad5;">獨立梟雄</span>全隊攻擊
+                <span class="tag" style="background:#f56565;">最終王牌</span>毀滅降臨
+                <span class="tag" style="background:#f6d365;color:#000;">最終防線</span>雙俠守護
                 <br>
                 <span class="tag" style="background:#e2e8f0;color:#000;">劍者</span>
                 <span class="tag" style="background:#f6ad55;color:#000;">刀者</span>
