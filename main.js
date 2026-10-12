@@ -31,7 +31,7 @@ function drawBattlefield(){
   const b=STATE.battle,g=ctx.createLinearGradient(0,ARENA.y0,0,ARENA.y1);g.addColorStop(0,"rgba(80,20,20,.18)"),g.addColorStop(1,"rgba(20,30,60,.18)"),ctx.fillStyle=g,ctx.fillRect(ARENA.x0,ARENA.y0,ARENA.x1-ARENA.x0,ARENA.y1-ARENA.y0),ctx.strokeStyle="rgba(232,185,35,.12)",ctx.lineWidth=1,ctx.strokeRect(ARENA.x0,ARENA.y0,ARENA.x1-ARENA.x0,ARENA.y1-ARENA.y0),ctx.font="bold 12px 'Noto Sans TC', Arial",ctx.textAlign="left",ctx.textBaseline="alphabetic",ctx.fillStyle="#e5533d",ctx.fillText("敵方 · "+(STATE.faction==="中原正道"?"異度魔界":"中原群俠"),ARENA.x0+8,ARENA.y0+16),ctx.fillStyle="#e8b923",ctx.fillText("我方 · 群俠",ARENA.x0+8,ARENA.y1-8);
   const pAlive=b.player.filter(u=>u.alive).length,eAlive=b.enemy.filter(u=>u.alive).length;ctx.textAlign="right",ctx.fillStyle="#9aa0b4",ctx.fillText("存活  我方 "+pAlive+"  vs  敵方 "+eAlive,ARENA.x1-8,ARENA.y0+16);
   const px0=ARENA.x0+8,py0=ARENA.y0+24;
-  STATE.ace&&(ctx.fillStyle="#f56565",ctx.font="bold 11px 'Noto Sans TC', Arial",ctx.fillText("👑 最終王牌降臨",px0,py0+30)),STATE.aegis&&(ctx.fillStyle="#f6d365",ctx.font="bold 11px 'Noto Sans TC', Arial",ctx.fillText("🛡 最終防線降臨",px0+(STATE.ace?130:0),py0+30));
+  STATE.ace&&(ctx.fillStyle="#f56565",ctx.font="bold 11px 'Noto Sans TC', Arial",ctx.fillText("⚠ 敵方告急：棄天帝降臨",px0,py0+30)),STATE.aegis&&(ctx.fillStyle="#f6d365",ctx.font="bold 11px 'Noto Sans TC', Arial",ctx.fillText("⚠ 敵方告急：一頁書＋風之痕降臨",px0,py0+30));
   b.player.concat(b.enemy).filter(u=>u.alive).sort((a,z)=>a.py-z.py).forEach(u=>drawBattleUnit(u)),b.fx.forEach(f=>{const a=clamp(f.life/700,0,1);ctx.globalAlpha=a,ctx.fillStyle=f.color,ctx.font="bold "+(f.big?20:14)+"px 'Noto Sans TC', Arial",ctx.textAlign="center",ctx.textBaseline="middle",ctx.fillText(f.text,f.x,f.y-(700-f.life)*.03),ctx.globalAlpha=1});
 }
 function drawBattleUnit(u){u.castFx>0&&(ctx.beginPath(),ctx.arc(u.px,u.py,26+(1-u.castFx/400)*22,0,Math.PI*2),ctx.strokeStyle="rgba(246,211,101,"+u.castFx/400+")",ctx.lineWidth=3,ctx.stroke());const grad=ctx.createRadialGradient(u.px-6,u.py-6,3,u.px,u.py,26);grad.addColorStop(0,u.team==="player"?"#3a4a78":"#7a2f2f"),grad.addColorStop(1,u.team==="player"?"#1a2240":"#3d1414"),ctx.beginPath(),ctx.arc(u.px,u.py,25,0,Math.PI*2),ctx.fillStyle=grad,ctx.fill(),ctx.lineWidth=2.5,ctx.strokeStyle=u.color||"#e8b923",ctx.stroke(),ctx.fillStyle="#f0ece0",ctx.font="bold 11px 'Noto Sans TC', Arial",ctx.textAlign="center",ctx.textBaseline="middle",ctx.fillText(u.name,u.px,u.py-2),ctx.font="9px Arial",ctx.fillStyle="#f6d365",ctx.fillText("★".repeat(u.stars),u.px,u.py+11);const bw=46,bh=5,bx=u.px-bw/2,by=u.py-36;ctx.fillStyle="rgba(0,0,0,.7)",ctx.fillRect(bx-1,by-1,bw+2,bh+2),ctx.fillStyle="rgba(40,46,66,.9)",ctx.fillRect(bx,by,bw,bh);const ratio=clamp(u.hp/u.maxHp,0,1);if(ctx.fillStyle=u.team==="player"?"#48bb78":"#e53e3e",ctx.fillRect(bx,by,bw*ratio,bh),u.shield>0){ctx.fillStyle="rgba(66,153,225,.85)";const sr=clamp(u.shield/u.maxHp,0,1);ctx.fillRect(bx+bw*ratio,by,bw*Math.min(sr,1-ratio),bh)}const my=by+bh+2;ctx.fillStyle="rgba(40,46,66,.9)",ctx.fillRect(bx,my,bw,3),ctx.fillStyle="#9f7aea",ctx.fillRect(bx,my,bw*clamp(u.mana/u.maxMana,0,1),3)}
@@ -101,7 +101,7 @@ function updateUI(){
   const r=ROUNDS[Math.min(STATE.round,ROUNDS.length-1)],info=document.getElementById("stage-info");
   info&&(STATE.phase==="battle"?info.innerHTML="第 "+r.stage+" / "+ROUNDS.length+" 波 <small>（戰鬥進行中…）</small>":info.innerHTML="第 "+r.stage+" / "+ROUNDS.length+" 波"+(r.boss?" <b style='color:#f56565'>⚠ 最終決戰："+bossLabel()+"</b>":"")+" <small>（準備階段　敵方 "+enemyCount(r)+" 名）</small>");
   const bb=document.getElementById("btn-battle");bb&&(bb.disabled=STATE.phase!=="prep");
-  const at=document.getElementById("aegis-tag");at&&(at.style.display=(STATE.aegis||STATE.ace)?"inline-block":"none",at.textContent=STATE.ace?"👑 最終王牌：棄天帝":(STATE.aegis?"🛡 最終防線：一頁書＋風之痕":""));
+  const at=document.getElementById("aegis-tag");at&&(at.style.display=(STATE.aegis||STATE.ace)?"inline-block":"none",at.textContent=STATE.ace?"⚠ 敵方援軍：棄天帝":(STATE.aegis?"⚠ 敵方援軍：一頁書＋風之痕":""));
 }
 function computeSynergies(){const counts={};for(let r=0;r<BOARD_ROWS;r++)for(let c=0;c<BOARD_COLS;c++){const u=STATE.board[r][c];u&&(counts[u.origin]=(counts[u.origin]||0)+1,counts[u.class]=(counts[u.class]||0)+1)}const active=[];return Object.keys(SYNERGIES).forEach(key=>{const def=SYNERGIES[key],n=counts[key]||0;let tier=-1;def.thresholds.forEach((t,i)=>{n>=t&&(tier=i)}),tier>=0&&active.push({key,def,count:n,tier,value:def.values[tier]})}),{counts,active}}
 function updateSynergies(){const box=document.getElementById("synergies");if(!box)return;const res=computeSynergies(),entries=Object.keys(SYNERGIES).map(key=>({key,def:SYNERGIES[key],count:res.counts[key]||0})).filter(e=>e.count>0).sort((a,b)=>b.count-a.count),sc=document.getElementById("syn-count");if(sc&&(sc.textContent=res.active.length+" 種"),entries.length===0){box.innerHTML='<div class="empty">尚無羈絆<br><small>將角色放上棋盤即會觸發</small></div>';return}box.innerHTML="",entries.forEach(e=>{const def=e.def;let tier=-1;def.thresholds.forEach((t,i)=>{e.count>=t&&(tier=i)});const nextT=def.thresholds.find(t=>e.count<t),div=document.createElement("div");div.className="synergy-item"+(tier>=0?" active tier-active":""),div.style.borderLeftColor=def.color;const head='<div class="s-head"><span class="s-name" style="color:'+def.color+'">'+def.icon+" "+e.key+'</span><span class="s-count">'+e.count+"/"+(nextT!==void 0?nextT:def.thresholds[def.thresholds.length-1])+"</span></div>",eff=tier>=0?'<div class="s-eff">✔ '+def.tiers[tier]+"</div>":'<div class="s-broken">✖ '+def.tiers[0]+"（尚缺 "+(def.thresholds[0]-e.count)+" 人）</div>";div.innerHTML=head+eff,box.appendChild(div)})}
@@ -115,11 +115,12 @@ function enemyCount(r){return r.boss?bossIds().length:Math.max(2,Math.min(r.coun
 function buildEnemyTeam(){const r=ROUNDS[STATE.round];if(r.boss)return buildBossTeam();const all=enemyPool();let pool=all.filter(c=>c.cost<=r.tier&&c.cost>=Math.max(1,r.tier-2));pool.length||(pool=all.filter(c=>c.cost<=r.tier));pool.length||(pool=all);const cnt=enemyCount(r),cols=Math.min(5,cnt),enemy=[];for(let i=0;i<cnt;i++){const ch=pick(pool),row=Math.floor(i/cols),col=i%cols,px=cols===1?410:140+col*(540/(cols-1)),py=52+row*46+randInt(-5,5);{const e=makeEntity({id:ch.id,star:r.star},"enemy",clamp(px,60,760),py,r.hpMul,r.adMul);e.baseAs*=(r.asMul||1),e.atkInterval=BASE_ATK_MS/e.baseAs,enemy.push(e)}}return enemy}
 const AEGIS_UNITS=["一頁書","風之痕"],ACE_UNITS=["棄天帝"];
 function summonUltimates(){
-  const b=STATE.battle;
-  const pull=(names,baseX)=>names.map((n,idx)=>{const c=CHAMPIONS.find(x=>x.name===n);return c?makeEntity({id:c.id,star:1},"player",clamp(baseX+(idx-(names.length-1)/2)*140,90,730),150,1):null}).filter(Boolean);
-  if(STATE.faction==="異度魔界"){const set=pull(ACE_UNITS,410);if(set.length){STATE.ace=!0,set.forEach(u=>{u.mr*=2,u.dr+=.3,u.maxHp=Math.round(u.maxHp*1.2),u.hp=u.maxHp}),b.player.push(...set)}}
-  else{const set=pull(AEGIS_UNITS,410);if(set.length){STATE.aegis=!0,set.forEach(u=>{u.shield+=800}),b.player.push(...set)}}
-  SFX.aegis(),toast(STATE.faction==="異度魔界"?"👑 魔軍陣線告急——「最終王牌」棄天帝降臨！":"🛡 神州防線告急——「最終防線」一頁書與風之痕降臨！"),pushFx(b,410,150,STATE.faction==="異度魔界"?"棄 天 降 臨":"最 終 防 線","#f6d365",!0);
+  /* 敵方告急：敵方全隊血量比例 <= ULT_TRIGGER 時，降臨終極援軍（強度隨波數成長）
+     我方選中原 → 魔界敵軍降臨「棄天帝」；我方選魔界 → 中原敵軍降臨「一頁書＋風之痕」 */
+  const b=STATE.battle,sc=clamp(.35+.05*STATE.round,.35,1),demonPlayer=STATE.faction==="異度魔界",names=demonPlayer?AEGIS_UNITS:ACE_UNITS;
+  const set=names.map((n,idx)=>{const c=CHAMPIONS.find(x=>x.name===n&&!x.boss);if(!c)return null;const e=makeEntity({id:c.id,star:1},"enemy",clamp(410+(idx-(names.length-1)/2)*140,90,730),90,sc,sc);demonPlayer?e.shield+=Math.round(800*sc):(e.mr*=1+sc,e.dr+=.3*sc);return e}).filter(Boolean);
+  if(set.length){demonPlayer?STATE.aegis=!0:STATE.ace=!0,b.enemy.push(...set)}
+  SFX.aegis(),toast(demonPlayer?"⚠ 中原告急——「一頁書」與「風之痕」降臨！":"⚠ 魔軍告急——「棄天帝」降臨！"),pushFx(b,410,90,demonPlayer?"書 ＋ 風 降 臨":"棄 天 降 臨","#f6d365",!0);
 }
 function startBattle(){
   if(STATE.phase!=="prep")return;
@@ -146,8 +147,8 @@ function updateBattle(dtMs){
   if(b.over){b.resolveTimer-=dtMs,b.fx.forEach(f=>{f.life-=dtMs}),b.fx=b.fx.filter(f=>f.life>0),b.resolveTimer<=0&&!b.resolved&&(b.resolved=!0,resolveBattle());return}
   b.t+=dtMs/1e3;
   const dt=dtMs/1e3,pAlive=aliveList(b.player),eAlive=aliveList(b.enemy);
-  /* ── 最終防線：我方全隊血量比例降到門檻以下時降臨（每場一次）── */
-  if(!b.summoned&&eAlive.length>0&&b.t>2){const th=b.player.reduce((s,u)=>s+Math.max(0,u.hp),0),tm=b.player.reduce((s,u)=>s+u.maxHp,0);tm>0&&th/tm<=ULT_TRIGGER&&(summonUltimates(),b.summoned=!0)}
+  /* ── 敵方告急：敵方全隊血量比例降到門檻以下時，終極援軍降臨（每場一次；最終決戰波不觸發）── */
+  if(!b.summoned&&!ROUNDS[STATE.round].boss&&STATE.round+1>=ENEMY_ULT_FROM&&b.t>2&&pAlive.length>0&&eAlive.length>0){const th=b.enemy.reduce((s,u)=>s+Math.max(0,u.hp),0),tm=b.enemy.reduce((s,u)=>s+u.maxHp,0);tm>0&&th/tm<=ULT_TRIGGER&&(summonUltimates(),b.summoned=!0)}
   b.player.concat(b.enemy).forEach(u=>{
     if(!u.alive)return;
     u.castFx>0&&(u.castFx-=dtMs),u.buffMul!==1&&b.t>u.buffUntil&&(u.buffMul=1,u.ad=u.baseAd),u.regen>0&&(u.hp=Math.min(u.maxHp,u.hp+u.regen*dt));

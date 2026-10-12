@@ -24,7 +24,7 @@ const CHAMPIONS=[{id:1,name:"屈世途",cost:1,origin:"苦境正道",class:"醫�
 {stage:"16",count:9,tier:5,star:1,hpMul:1,adMul:1,asMul:1,boss:!0}],
 /* ===== v11 難度與勝負設定 ===== */
 PLAYER_HP_MUL=1.15,PROTECT_ROUNDS=2,LOSE_DMG_BASE=2,LOSE_DMG_MAX=10,
-ULT_TRIGGER=.3,
+ULT_TRIGGER=.3,ENEMY_ULT_FROM=5,
 /* ===== v11.2 費用平衡：依費用統一調整血量／攻擊／攻速倍率（1~5 費）===== */
 COST_BAL={1:{hp:.92,ad:.94,as:.95},2:{hp:1.08,ad:1.14,as:1},3:{hp:1.18,ad:1.09,as:1},4:{hp:1.30,ad:1.20,as:1.05},5:{hp:1.33,ad:1.32,as:1.10},6:{hp:1,ad:1,as:1.10}},
 /* 職業攻速倍率：越高打越快 */
