@@ -28,3 +28,6 @@ table.odds td:first-child{background:#181d2c;color:var(--gold);font-weight:700}
 table.odds tbody tr:nth-child(even) td{background:#141826}
 .odds-need{margin-top:10px;font-size:11.5px;color:var(--text-dim);letter-spacing:.5px;line-height:1.8}
 @media(max-width:760px){#faction-options{grid-template-columns:1fr}.faction-card-wrap{padding:22px 18px}}
+
+/* v11：修正頂部狀態列內層 span 被套用外層膠囊樣式 */
+.stats span span{background:none;border:0;padding:0;border-radius:0;font-size:inherit;color:inherit}
