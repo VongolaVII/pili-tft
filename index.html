@@ -55,7 +55,7 @@ sweep(document)})();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>神州侵防戰：霹靂天罪自走棋</title>
-    <meta name="description" content="以霹靂神州三部曲為主題的 TFT 式自走棋網頁遊戲：陣營選擇、神柱侵防、角色商店、羈絆陣容、自動戰鬥。">
+    <meta name="description" content="以霹靂神州三部曲為主題的 TFT 式自走棋網頁遊戲：陣營選擇、魔界進攻與中原防守、角色商店、羈絆陣容、自動戰鬥。">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -72,8 +72,7 @@ sweep(document)})();</script>
                 <span>⭐ 等級 <strong id="level">1</strong> (<span id="exp">0/2</span>)</span>
                 <span>👥 上場 <strong id="unit-count">0/1</strong></span>
                 <span class="hp-box">❤️ <span id="hp-label">血量</span> <strong id="hp">100</strong></span>
-                <span class="hp-box" id="siege-box" style="display:none">🏰 神州神柱 <strong id="siege">100</strong></span>
-                <span class="hp-box">🛡 <span id="pillar-label">神柱</span> <strong id="pillar">100</strong></span>
+                <span class="hp-box" id="siege-box" style="display:none">🏰 攻陷進度 <strong id="siege">0 / 8</strong></span>
                 <span class="faction-pill" id="aegis-tag" style="display:none"></span>
             </div>
         </header>
@@ -89,7 +88,7 @@ sweep(document)})();</script>
             <!-- 中間戰場 -->
             <section id="canvas-container">
                 <div class="control-row">
-                    <span id="stage-info">回合 1-1 <small>（準備階段）</small></span>
+                    <span id="stage-info">第 1 / 16 波 <small>（準備階段）</small></span>
                     <div class="ctrl-btns">
                         <button class="btn" id="btn-help" onclick="toggleHelp(true)">📖 玩法說明</button>
                         <button class="btn" id="btn-sell" onclick="toggleSellMode()">🗑 賣出角色</button>
@@ -129,19 +128,19 @@ sweep(document)})();</script>
     <div id="help-modal">
         <div class="help-card">
             <h2>⚔️ 神州侵防戰</h2>
-            <p style="color:#9aa0b4;font-size:12.5px;">官方副標：<b style="color:#e0b64a">魔界進攻 · 中原防守</b>。以霹靂神州三部曲（霹靂神州／蒼玄泣／天罪）為背景的 TFT 式自走棋。魔界進攻打爆最後一條神柱即可入侵中原，中原正道守住魔界進攻即取得勝利。</p>
+            <p style="color:#9aa0b4;font-size:12.5px;">官方副標：<b style="color:#e0b64a">魔界進攻 · 中原防守</b>。以霹靂神州三部曲（霹靂神州／蒼玄泣／天罪）為背景的 TFT 式自走棋。魔界進攻成功即入侵中原，中原正道守住魔界進攻即取得勝利。</p>
 
             <h3>🎯 遊戲目標</h3>
             <ul>
-                <li><b>中原正道（防守方）</b>：每次戰鬥失敗會損失「神州血量」，血量歸零＝神柱被推倒、落敗；<b>撐過 16 回合、血量沒歸零，就算守住神州</b>。對手只會派出異度魔界陣營（含東瀛、獨立梟雄）與中立角色。</li>
-                <li><b>異度魔界（進攻方）</b>：每次戰鬥<b>獲勝</b>就會削減「神州神柱」耐久（存活人數越多削越多）；<b>16 回合內把神柱推倒＝入侵成功</b>。若 16 回合結束神柱仍未倒、或「魔軍血量」歸零，就要<b>退兵回魔界</b>（進攻失敗）。對手只會派出中原正道（含玄宗道門）與中立角色。</li>
+                <li><b>中原正道（防守方）</b>：每次戰鬥失敗會損失「神州血量」，血量歸零＝防線被攻破、落敗；<b>撐過 16 波、血量沒歸零，就算守住神州</b>。對手<b>只會派出異度魔界陣營（異度魔界、東瀛、獨立梟雄）</b>，不會出現中原角色，也沒有中立角色。</li>
+                <li><b>異度魔界（進攻方）</b>：每次戰鬥<b>獲勝</b>累積 1 點「攻陷進度」，<b>16 波內累積 8 勝＝攻陷神州、入侵成功</b>。若 16 波結束仍未達 8 勝，或「魔軍血量」歸零（戰鬥失敗會扣血），就要<b>退兵回魔界</b>（進攻失敗）。對手<b>只會派出中原正道陣營（苦境正道、玄宗道門）</b>，不會出現魔界角色，也沒有中立角色。</li>
                 <li><b>新手保護</b>：前 2 個回合戰鬥失敗不扣血。</li>
             </ul>
 
-            <h3>🛡 最終防線機制（神州侵防戰主題）</h3>
+            <h3>🛡 最終防線機制</h3>
             <ul>
-                <li><b>戰場神柱／戰線（耐久 100）</b>：每場戰鬥開始時重置為 100，敵方存活期間會持續被削減；耐久越低，代表我方戰線越吃緊。</li>
-                <li><b>保底降臨</b>：當神柱耐久降至 <b>30 以下</b>（濒臨攻破）時，我方<b>最終防線自動降臨</b>：選擇「中原正道」時由 <b>一頁書 ＋ 風之痕</b> 同時登場；選擇「異度魔界」時則由 <b>棄天帝</b> 作為最終王牌降臨。三位終極角色均為 6 費，數值遠超一般角色。</li>
+                
+                <li><b>保底降臨</b>：戰鬥中當我方全隊血量比例降到 <b>30% 以下</b>（每場一次）時，我方<b>最終防線自動降臨</b>：選擇「中原正道」時由 <b>一頁書 ＋ 風之痕</b> 同時登場；選擇「異度魔界」時則由 <b>棄天帝</b> 作為最終王牌降臨。三位終極角色均為 6 費，數值遠超一般角色。</li>
                 <li><b>終極羈絆</b>：一頁書／風之痕同場觸發「最終防線」（全隊增傷、減傷）；棄天帝登場觸發「最終王牌」（全隊大幅增傷、吸血），助你逆轉戰局。</li>
             </ul>
 
