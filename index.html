@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>霹靂神州：天罪自走棋</title>
+    <meta name="description" content="以霹靂神州三部曲為主題的 TFT 式自走棋網頁遊戲：角色商店、羈絆陣容、自動戰鬥。">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-app">
+        <!-- ========================= 頂部狀態列 ========================= -->
+        <header id="top-bar">
+            <div class="logo">
+                ⚔️ 霹靂神州：天罪自走棋
+                <span class="sub">PILI SHENZHOU · AUTO CHESS</span>
+            </div>
+            <div class="stats">
+                <span>💰 金錢 <strong id="gold">10</strong></span>
+                <span>⭐ 等級 <strong id="level">1</strong> (<span id="exp">0/2</span>)</span>
+                <span>👥 上場 <strong id="unit-count">0/1</strong></span>
+                <span class="hp-box">❤️ 血量 <strong id="hp">100</strong></span>
+            </div>
+        </header>
+
+        <!-- ========================== 主體區 ========================== -->
+        <main id="main-content">
+            <!-- 左側羈絆列表 -->
+            <aside id="synergy-box">
+                <h3>羈絆 EFFECTS <small id="syn-count">0 種</small></h3>
+                <div id="synergies"><div class="empty">尚無羈絆<br><small>將角色放上棋盤即會觸發</small></div></div>
+            </aside>
+
+            <!-- 中間戰場 -->
+            <section id="canvas-container">
+                <div class="control-row">
+                    <span id="stage-info">回合 1-1 <small>（準備階段）</small></span>
+                    <div class="ctrl-btns">
+                        <button class="btn" id="btn-help" onclick="toggleHelp(true)">📖 玩法說明</button>
+                        <button class="btn" id="btn-sell" onclick="toggleSellMode()">🗑 賣出角色</button>
+                        <button class="btn btn-primary" id="btn-battle" onclick="startBattle()">⚔ 開始戰鬥</button>
+                    </div>
+                </div>
+                <canvas id="gameCanvas" width="820" height="470"></canvas>
+                <div id="battle-log">將角色從備戰區拖曳／點選至棋盤，準備好後按「開始戰鬥」</div>
+            </section>
+        </main>
+
+        <!-- ========================== 底部商店 ========================== -->
+        <footer id="shop-bar">
+            <div class="shop-top">
+                <div class="shop-title">⚜ 俠客招募閣</div>
+                <div class="shop-btns">
+                    <button class="btn btn-gold" onclick="buyExp()">⚡ 買經驗 (4💰)</button>
+                    <button class="btn" onclick="refreshShop()">🎲 刷新商店 (2💰)</button>
+                </div>
+            </div>
+            <div id="shop-cards"></div>
+        </footer>
+    </div>
+
+    <!-- ========================== 玩法說明 ========================== -->
+    <div id="help-modal">
+        <div class="help-card">
+            <h2>⚔️ 霹靂神州：天罪自走棋</h2>
+            <p style="color:#9aa0b4;font-size:12.5px;">以霹靂神州三部曲（霹靂神州／蒼玄泣／天罪）為背景的 TFT 式自走棋。集結正道群俠、異度魔界、玄宗道門、東瀛武者與紅樓劍閣，組成最強陣容對抗魔界大軍。</p>
+
+            <h3>🎯 遊戲目標</h3>
+            <p>在 16 個回合中生存下來。每次戰鬥失敗會損失生命值，生命歸零即落敗；撐過全部回合即為勝利。</p>
+
+            <h3>🕹 操作方式</h3>
+            <ul>
+                <li><b>購買角色</b>：點擊下方商店卡片（需花費對應金錢）。</li>
+                <li><b>上場部署</b>：點選備戰區角色 → 再點棋盤格子；或直接在棋盤與備戰區之間互點交換。</li>
+                <li><b>取消選取</b>：再次點擊已選角色。</li>
+                <li><b>賣出</b>：按「🗑 賣出角色」進入賣出模式，再點要賣的角色（返還購買金錢）。</li>
+                <li><b>刷新商店</b>：2💰 換一批新卡；<b>買經驗</b>：4💰 提升等級（等級越高，商店出現高費角色機率越大、可上場人數越多）。</li>
+                <li><b>開始戰鬥</b>：部署完成後按紅色按鈕，戰鬥全自動進行。</li>
+            </ul>
+
+            <h3>⚙️ 核心機制</h3>
+            <ul>
+                <li><b>經濟</b>：起始 10 金。每回合基礎收入 5 金 + 存款利息（每 10 金 +1，最多 +5）+ 連勝／連敗獎勵。金錢可刷新商店或買經驗。</li>
+                <li><b>等級與上場人數</b>：等級 1~9，對應可上場人數 1/2/3/4/5/6/7/8/9。買經驗累積滿即升級。</li>
+                <li><b>升星合成</b>：集滿 3 張同名同星角色自動合成，1★→2★→3★，能力大幅提升。</li>
+                <li><b>羈絆系統</b>：棋盤上同陣營／同職業的角色達到門檻即觸發效果（見左側面板），是致勝關鍵。</li>
+                <li><b>自動戰鬥</b>：雙方自動尋敵、普攻、集氣施放技能；一方全滅即分出勝負。</li>
+            </ul>
+
+            <h3>🏷 羈絆一覽（陣營 / 職業）</h3>
+            <p style="font-size:12.5px;">
+                <span class="tag" style="background:#ecc94b;color:#000;">苦境正道</span>護盾
+                <span class="tag" style="background:#e53e3e;">異度魔界</span>吸血
+                <span class="tag" style="background:#4299e1;">玄宗道門</span>法傷
+                <span class="tag" style="background:#dd6b20;">東瀛</span>攻速
+                <span class="tag" style="background:#d53f8c;">紅樓劍閣</span>暴擊
+                <span class="tag" style="background:#38b2ac;">識界靈體</span>增傷
+                <span class="tag" style="background:#805ad5;">獨立梟雄</span>全隊攻擊
+                <br>
+                <span class="tag" style="background:#e2e8f0;color:#000;">劍者</span>
+                <span class="tag" style="background:#f6ad55;color:#000;">刀者</span>
+                <span class="tag" style="background:#63b3ed;color:#000;">術法</span>
+                <span class="tag" style="background:#f6e05e;color:#000;">佛門</span>
+                <span class="tag" style="background:#fc8181;color:#000;">魔道</span>
+                <span class="tag" style="background:#68d391;color:#000;">弓者</span>
+                <span class="tag" style="background:#9ae6b4;color:#000;">醫者</span>
+                <span class="tag" style="background:#b794f4;color:#000;">刺客</span>
+                <span class="tag" style="background:#a0aec0;color:#000;">重裝</span>
+            </p>
+
+            <h3>💡 新手提示</h3>
+            <ul>
+                <li>前期先湊 <b>2 費、3 費角色</b>的上場人數，中後期再追求 4~5 費核心。</li>
+                <li>「苦境正道」羈絆人數門檻低（2 人即啟動護盾），是穩定開局首選。</li>
+                <li>「異度魔界」吸血搭配高攻角色續戰力極強，但門檻為 3 人。</li>
+                <li>記得留 10/20/30 金吃利息，不要每回合把錢花光。</li>
+            </ul>
+
+            <div class="help-close">
+                <button class="btn" onclick="restartGame()">🔄 重新開始</button>
+                <button class="btn btn-primary" onclick="toggleHelp(false)">開始遊戲</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================== 結算畫面 ========================== -->
+    <div id="result-modal">
+        <div class="result-card">
+            <h2 id="result-title">天罪降臨</h2>
+            <p id="result-desc"></p>
+            <p class="big-stat" id="result-stats"></p>
+            <div class="help-close" style="justify-content:center;">
+                <button class="btn btn-primary" onclick="restartGame()">🔄 再戰一局</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <!-- 依序載入：資料庫 → 主程式 -->
+    <script src="data.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

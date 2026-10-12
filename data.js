@@ -1,83 +1,166 @@
-// 霹靂神州 TFT 自走棋 - 官方角色與武學修正版數據庫
+/* =========================================================================
+ *  霹靂神州：天罪自走棋 — 資料庫 data.js
+ *  沿用原檔架構（CHAMPIONS / SYNERGY_THRESHOLDS / DROP_RATES），並擴充：
+ *  1. 羈絆系統 SYNERGIES：陣營 7 種 + 職業 9 種 + 特殊神級
+ *  2. 每名角色加上 color（陣營色）、ability（技能型別）供戰鬥引擎讀取
+ *  3. ROUNDS 回合表、EXP_TABLE 升級經驗表
+ *  ※ 角色出處與羈絆為「遊戲化改編」，非嚴謹劇集考據。
+ * ========================================================================= */
+
+/* ------------------------------ 角色資料庫 ------------------------------ */
 const CHAMPIONS = [
-    // --- 1 費 (Cost 1) ---
-    { id: 1, name: "屈世途", cost: 1, origin: "苦境正道", class: "醫者/輔助", hp: 550, mp: "0/60", ad: 45, armor: 20, mr: 20, range: 3, skill: "琉璃機關" },
-    { id: 2, name: "伊達我流", cost: 1, origin: "東瀛武林", class: "劍客", hp: 600, mp: "0/40", ad: 55, armor: 30, mr: 30, range: 1, skill: "一刀流·極" },
-    { id: 3, name: "暴風殘道", cost: 1, origin: "異度魔界", class: "重裝", hp: 650, mp: "0/80", ad: 50, armor: 40, mr: 40, range: 1, skill: "暴風狂刀" },
-    { id: 4, name: "金藺", cost: 1, origin: "玄宗道門", class: "術士", hp: 500, mp: "20/50", ad: 40, armor: 20, mr: 20, range: 4, skill: "玄宗道符" },
-    { id: 5, name: "霏嬰", cost: 1, origin: "紅樓劍閣", class: "醫者/輔助", hp: 500, mp: "0/50", ad: 40, armor: 20, mr: 20, range: 3, skill: "純真祈願" },
-    { id: 6, name: "遊子安", cost: 1, origin: "識界靈體", class: "術士", hp: 500, mp: "0/40", ad: 45, armor: 20, mr: 20, range: 3, skill: "識界靈光" },
+  // ======================= 1 費 =======================
+  { id: 1,  name: "屈世途",   cost: 1, origin: "苦境正道", class: "醫者", hp: 550, mp: "0/60",  ad: 42,  armor: 20, mr: 20, range: 3, skill: "琉璃機關",   ability: { type: "shield", value: 130, desc: "為血量最低的隊友施加 130 點護盾" },                color: "#ecc94b" },
+  { id: 2,  name: "三口劍",   cost: 1, origin: "苦境正道", class: "弓者", hp: 500, mp: "0/50",  ad: 50,  armor: 18, mr: 18, range: 4, skill: "三劍歸元",   ability: { type: "burst",  value: 120, desc: "對當前目標造成 120 點術法傷害" },                 color: "#ecc94b" },
+  { id: 3,  name: "亂世狂刀", cost: 1, origin: "苦境正道", class: "刀者", hp: 620, mp: "0/70",  ad: 52,  armor: 26, mr: 22, range: 1, skill: "狂龍八斬",   ability: { type: "aoe",    value: 90,  radius: 70, desc: "對周圍敵人造成 90 點濺射傷害" },             color: "#ecc94b" },
+  { id: 4,  name: "伊達我流", cost: 1, origin: "東瀛",     class: "劍者", hp: 600, mp: "0/40",  ad: 55,  armor: 30, mr: 26, range: 1, skill: "一刀流·極", ability: { type: "buff",   value: 25,  desc: "自身攻擊力提升 25%，持續 6 秒" },                 color: "#dd6b20" },
+  { id: 5,  name: "暴風殘道", cost: 1, origin: "異度魔界", class: "重裝", hp: 680, mp: "0/80",  ad: 48,  armor: 42, mr: 40, range: 1, skill: "暴風狂刀",   ability: { type: "shield", value: 200, desc: "自身獲得 200 點護盾" },                           color: "#e53e3e" },
+  { id: 6,  name: "昭穆尊（金鎏影）", cost: 1, origin: "玄宗道門", class: "術法", group: "玄宗四奇", hp: 500, mp: "20/50", ad: 40,  armor: 20, mr: 22, range: 4, skill: "金鎏影·道符",   ability: { type: "burst",  value: 140, desc: "射出符咒造成 140 點術法傷害" },                    color: "#4299e1" },
+  { id: 7,  name: "霏嬰",     cost: 1, origin: "紅樓劍閣", class: "醫者", hp: 480, mp: "0/50",  ad: 38,  armor: 18, mr: 18, range: 3, skill: "純真祈願",   ability: { type: "heal",   value: 170, desc: "治療血量最低的隊友 170 點" },                     color: "#d53f8c" },
+  { id: 8,  name: "遊子安",   cost: 1, origin: "識界靈體", class: "術法", hp: 500, mp: "0/45",  ad: 44,  armor: 20, mr: 20, range: 3, skill: "識界靈光",   ability: { type: "burst",  value: 110, desc: "凝聚靈光造成 110 點術法傷害" },                    color: "#38b2ac" },
 
-    // --- 2 費 (Cost 2) ---
-    { id: 7, name: "莫召奴", cost: 2, origin: "苦境正道", class: "術士", hp: 600, mp: "20/70", ad: 45, armor: 25, mr: 25, range: 4, skill: "朱雀靈心" },
-    { id: 8, name: "照世明燈", cost: 2, origin: "苦境正道", class: "醫者/輔助", hp: 650, mp: "30/80", ad: 45, armor: 30, mr: 30, range: 3, skill: "九轉靈丹" },
-    { id: 9, name: "算天裂", cost: 2, origin: "異度魔界", class: "術士", hp: 600, mp: "0/60", ad: 50, armor: 25, mr: 25, range: 3, skill: "恨長生策" },
-    { id: 10, name: "京極鬼彥", cost: 2, origin: "東瀛武林", class: "重裝", hp: 750, mp: "0/70", ad: 60, armor: 45, mr: 45, range: 1, skill: "鬼彥槍突" },
-    { id: 11, name: "泰逢", cost: 2, origin: "識界靈體", class: "重裝", hp: 700, mp: "0/60", ad: 65, armor: 40, mr: 40, range: 1, skill: "斬馬巨刃" },
-    { id: 12, name: "蘇苓", cost: 2, origin: "識界靈體", class: "術士", hp: 550, mp: "0/50", ad: 40, armor: 25, mr: 25, range: 3, skill: "迷心幻影" },
-    { id: 13, name: "翠山步", cost: 2, origin: "玄宗道門", class: "劍客", hp: 650, mp: "0/40", ad: 60, armor: 30, mr: 30, range: 1, skill: "弦劍合一" },
+  // ======================= 2 費 =======================
+  { id: 9,  name: "莫召奴",   cost: 2, origin: "苦境正道", class: "術法", hp: 620, mp: "20/70", ad: 44,  armor: 24, mr: 26, range: 4, skill: "朱雀靈心",   ability: { type: "aoe",    value: 150, radius: 80, desc: "朱雀火環灼燒範圍內敵人 150 點" },           color: "#ecc94b" },
+  { id: 10, name: "照世明燈", cost: 2, origin: "苦境正道", class: "醫者", hp: 650, mp: "30/80", ad: 45,  armor: 30, mr: 30, range: 3, skill: "九轉靈丹",   ability: { type: "heal",   value: 260, desc: "灑下靈丹治療全隊最低血量隊友 260 點" },           color: "#ecc94b" },
+  { id: 11, name: "算天裂",   cost: 2, origin: "異度魔界", class: "術法", hp: 600, mp: "0/60",  ad: 50,  armor: 24, mr: 26, range: 3, skill: "恨長生策",   ability: { type: "burst",  value: 190, desc: "算計天機造成 190 點術法傷害" },                    color: "#e53e3e" },
+  { id: 12, name: "京極鬼彥", cost: 2, origin: "東瀛",     class: "重裝", hp: 760, mp: "0/70",  ad: 60,  armor: 46, mr: 42, range: 1, skill: "鬼彥槍突",   ability: { type: "shield", value: 240, desc: "鐵壁防禦獲得 240 點護盾" },                       color: "#dd6b20" },
+  { id: 13, name: "泰逢",     cost: 2, origin: "識界靈體", class: "重裝", hp: 720, mp: "0/60",  ad: 64,  armor: 40, mr: 40, range: 1, skill: "斬馬巨刃",   ability: { type: "aoe",    value: 130, radius: 65, desc: "巨刃掃擊造成 130 點範圍傷害" },                color: "#38b2ac" },
+  { id: 14, name: "蘇苓",     cost: 2, origin: "識界靈體", class: "術法", hp: 550, mp: "0/50",  ad: 40,  armor: 24, mr: 26, range: 3, skill: "迷心幻影",   ability: { type: "burst",  value: 175, desc: "幻影侵蝕造成 175 點術法傷害" },                    color: "#38b2ac" },
+  { id: 15, name: "翠山步",   cost: 2, origin: "玄宗道門", class: "劍者", hp: 660, mp: "0/40",  ad: 62,  armor: 30, mr: 28, range: 1, skill: "弦劍合一",   ability: { type: "buff",   value: 30,  desc: "劍心通明，自身攻擊力提升 30%，持續 6 秒" },        color: "#4299e1" },
+  { id: 16, name: "嘯日猋",   cost: 2, origin: "獨立梟雄", class: "刀者", hp: 680, mp: "0/60",  ad: 60,  armor: 28, mr: 26, range: 1, skill: "天刀斬",     ability: { type: "aoe",    value: 140, radius: 70, desc: "刀氣縱橫造成 140 點範圍傷害" },                color: "#805ad5" },
 
-    // --- 3 費 (Cost 3) ---
-    { id: 14, name: "汲無蹤", cost: 3, origin: "苦境正道", class: "劍客", hp: 800, mp: "0/50", ad: 70, armor: 35, mr: 35, range: 1, skill: "病劍三絕" },
-    { id: 15, name: "華顏無道", cost: 3, origin: "異度魔界", class: "重裝", hp: 900, mp: "30/90", ad: 65, armor: 50, mr: 50, range: 1, skill: "惡露天斧" },
-    { id: 16, name: "斷風塵", cost: 3, origin: "異度魔界", class: "刺客", hp: 750, mp: "0/60", ad: 75, armor: 30, mr: 30, range: 1, skill: "降世魔劍" },
-    { id: 17, name: "墨塵音", cost: 3, origin: "玄宗道門", class: "術士", hp: 700, mp: "40/80", ad: 50, armor: 35, mr: 35, range: 3, skill: "墨曲琴音" },
-    { id: 18, name: "拳皇", cost: 3, origin: "東瀛武林", class: "重裝", hp: 850, mp: "0/70", ad: 80, armor: 45, mr: 45, range: 1, skill: "拳霸天下" },
-    { id: 19, name: "神鶴佐木", cost: 3, origin: "東瀛武林", class: "刺客", hp: 750, mp: "0/50", ad: 70, armor: 35, mr: 35, range: 1, skill: "普賢流·飛瀧斬" },
-    { id: 20, name: "樓無痕", cost: 3, origin: "紅樓劍閣", class: "劍客", hp: 750, mp: "0/60", ad: 75, armor: 35, mr: 35, range: 2, skill: "赤宵鍊" },
-    { id: 21, name: "緋羽怨姬", cost: 3, origin: "紅樓劍閣", class: "醫者/輔助", hp: 650, mp: "30/80", ad: 45, armor: 30, mr: 30, range: 3, skill: "飛針救劫" },
-    { id: 22, name: "曼睟", cost: 3, origin: "識界靈體", class: "重裝", hp: 850, mp: "0/60", ad: 65, armor: 45, mr: 45, range: 1, skill: "曼睟護法" },
-    { id: 23, name: "閻王鎖", cost: 3, origin: "獨立梟雄", class: "刺客", hp: 750, mp: "0/50", ad: 80, armor: 30, mr: 30, range: 1, skill: "閻王鐮刀" },
+  // ======================= 3 費 =======================
+  { id: 17, name: "汲無蹤",   cost: 3, origin: "苦境正道", class: "劍者", hp: 800, mp: "0/50",  ad: 70,  armor: 34, mr: 32, range: 1, skill: "病劍三絕",   ability: { type: "burst",  value: 260, desc: "病劍一擊造成 260 點術法傷害" },                    color: "#ecc94b" },
+  { id: 18, name: "臥佛",     cost: 3, origin: "苦境正道", class: "佛門", hp: 820, mp: "20/70", ad: 58,  armor: 40, mr: 44, range: 2, skill: "大乘渡一帆", ability: { type: "shield", value: 320, desc: "佛光護體，全隊獲得 320 點護盾" },                color: "#ecc94b" },
+  { id: 19, name: "佛公子",   cost: 3, origin: "苦境正道", class: "佛門", hp: 760, mp: "0/60",  ad: 62,  armor: 34, mr: 38, range: 3, skill: "風雲雨",     ability: { type: "burst",  value: 230, desc: "風雲變色造成 230 點術法傷害" },                    color: "#ecc94b" },
+  { id: 20, name: "華顏無道", cost: 3, origin: "異度魔界", class: "重裝", hp: 900, mp: "30/90", ad: 66,  armor: 50, mr: 48, range: 1, skill: "惡露天斧",   ability: { type: "aoe",    value: 200, radius: 80, desc: "巨斧劈落造成 200 點範圍傷害" },                color: "#e53e3e" },
+  { id: 21, name: "斷風塵",   cost: 3, origin: "異度魔界", class: "刺客", hp: 750, mp: "0/60",  ad: 78,  armor: 30, mr: 30, range: 1, skill: "降世魔劍",   ability: { type: "burst",  value: 250, desc: "魔劍突刺造成 250 點術法傷害" },                    color: "#e53e3e" },
+  { id: 22, name: "赦生童子", cost: 3, origin: "異度魔界", class: "魔道", hp: 780, mp: "0/70",  ad: 72,  armor: 36, mr: 34, range: 1, skill: "赦生斬",     ability: { type: "aoe",    value: 210, radius: 75, desc: "魔氣斬擊造成 210 點範圍傷害" },                color: "#e53e3e" },
+  { id: 23, name: "墨塵音",   cost: 3, origin: "玄宗道門", class: "術法", group: "玄宗四奇", hp: 700, mp: "40/80", ad: 50,  armor: 34, mr: 36, range: 3, skill: "墨曲琴音",   ability: { type: "aoe",    value: 240, radius: 85, desc: "琴音掃蕩造成 240 點範圍傷害" },                color: "#4299e1" },
+  { id: 24, name: "拳皇",     cost: 3, origin: "東瀛",     class: "重裝", hp: 850, mp: "0/70",  ad: 82,  armor: 44, mr: 42, range: 1, skill: "拳霸天下",   ability: { type: "buff",   value: 40,  desc: "拳意爆發，自身攻擊力提升 40%，持續 6 秒" },        color: "#dd6b20" },
+  { id: 25, name: "神鶴佐木", cost: 3, origin: "東瀛",     class: "刺客", hp: 760, mp: "0/50",  ad: 76,  armor: 32, mr: 32, range: 1, skill: "普賢流飛瀑斬", ability: { type: "burst", value: 245, desc: "飛瀑斬擊造成 245 點術法傷害" },                  color: "#dd6b20" },
+  { id: 26, name: "樓無痕",   cost: 3, origin: "紅樓劍閣", class: "劍者", hp: 740, mp: "0/60",  ad: 74,  armor: 34, mr: 32, range: 2, skill: "赤宵鑊",     ability: { type: "burst",  value: 235, desc: "赤宵劍氣造成 235 點術法傷害" },                    color: "#d53f8c" },
+  { id: 27, name: "緋羽怨姬", cost: 3, origin: "紅樓劍閣", class: "醫者", hp: 660, mp: "30/80", ad: 45,  armor: 30, mr: 32, range: 3, skill: "飛針救劫",   ability: { type: "heal",   value: 320, desc: "飛針渡厄治療隊友 320 點" },                       color: "#d53f8c" },
+  { id: 28, name: "曼睩",     cost: 3, origin: "識界靈體", class: "重裝", hp: 860, mp: "0/60",  ad: 64,  armor: 46, mr: 46, range: 1, skill: "曼睩護法",   ability: { type: "shield", value: 300, desc: "靈體護法獲得 300 點護盾" },                       color: "#38b2ac" },
+  { id: 29, name: "閻王鎖",   cost: 3, origin: "獨立梟雄", class: "刺客", hp: 760, mp: "0/50",  ad: 82,  armor: 30, mr: 30, range: 1, skill: "閻王鏇刀",   ability: { type: "burst",  value: 255, desc: "勾魂一刀造成 255 點術法傷害" },                    color: "#805ad5" },
 
-    // --- 4 費 (Cost 4) ---
-    { id: 24, name: "葉小釵", cost: 4, origin: "苦境正道", class: "劍客", hp: 950, mp: "0/50", ad: 85, armor: 45, mr: 45, range: 1, skill: "活殺留聲 / 心劍" },
-    { id: 25, name: "風之痕", cost: 4, origin: "苦境正道", class: "劍客", hp: 900, mp: "0/60", ad: 90, armor: 40, mr: 40, range: 1, skill: "風之痕/魔流劍" },
-    { id: 26, name: "吞佛童子", cost: 4, origin: "異度魔界", class: "刺客", hp: 900, mp: "30/80", ad: 85, armor: 40, mr: 40, range: 1, skill: "朱厭殺道·紅蓮蝕日" },
-    { id: 27, name: "伏嬰師", cost: 4, origin: "異度魔界", class: "術士", hp: 800, mp: "40/100", ad: 55, armor: 35, mr: 35, range: 4, skill: "式神召喚·骨昌" },
-    { id: 28, name: "九禍", cost: 4, origin: "異度魔界", class: "術士/輔助", hp: 850, mp: "30/80", ad: 60, armor: 40, mr: 40, range: 3, skill: "魔女之佑" },
-    { id: 29, name: "赭杉軍", cost: 4, origin: "玄宗道門", class: "重裝/術士", hp: 1000, mp: "50/100", ad: 70, armor: 50, mr: 50, range: 1, skill: "紫霄騰龍" },
-    { id: 30, name: "釋雲生", cost: 4, origin: "識界靈體", class: "劍客", hp: 900, mp: "0/50", ad: 85, armor: 40, mr: 40, range: 1, skill: "雲生劍" },
-    { id: 31, name: "玄笈華", cost: 4, origin: "識界靈體", class: "術士", hp: 800, mp: "50/120", ad: 55, armor: 35, mr: 35, range: 4, skill: "玄舸轟擊" },
-    { id: 32, name: "曌雲裳", cost: 4, origin: "紅樓劍閣", class: "劍客", hp: 950, mp: "0/60", ad: 95, armor: 45, mr: 45, range: 1, skill: "狂躁劍意" },
-    { id: 33, name: "軒轅不敗", cost: 4, origin: "獨立梟雄", class: "重裝", hp: 1100, mp: "0/80", ad: 75, armor: 55, mr: 55, range: 1, skill: "玄功反彈" },
+  // ======================= 4 費 =======================
+  { id: 30, name: "葉小釵",   cost: 4, origin: "苦境正道", class: "劍者", hp: 950, mp: "0/50",  ad: 86,  armor: 44, mr: 40, range: 1, skill: "活殺留聲 / 心劍", ability: { type: "burst", value: 340, desc: "心劍一擊造成 340 點術法傷害" },            color: "#ecc94b" },
+  { id: 31, name: "風之痕",   cost: 4, origin: "苦境正道", class: "劍者", hp: 900, mp: "0/60",  ad: 92,  armor: 40, mr: 38, range: 1, skill: "魔流劍",     ability: { type: "aoe",    value: 300, radius: 80, desc: "魔流劍風造成 300 點範圍傷害" },              color: "#ecc94b" },
+  { id: 32, name: "燕歸人",   cost: 4, origin: "苦境正道", class: "刀者", hp: 1000, mp: "0/80", ad: 84,  armor: 48, mr: 42, range: 1, skill: "燕戟歸命",   ability: { type: "aoe",    value: 280, radius: 85, desc: "燕戟旋斬造成 280 點範圍傷害" },              color: "#ecc94b" },
+  { id: 33, name: "一步蓮華", cost: 4, origin: "苦境正道", class: "佛門", hp: 900, mp: "40/100", ad: 62, armor: 44, mr: 50, range: 3, skill: "蓮華聖路",   ability: { type: "heal",   value: 420, desc: "蓮華聖光照癒全隊最低血量隊友 420 點" },           color: "#ecc94b" },
+  { id: 34, name: "月神",     cost: 4, origin: "苦境正道", class: "弓者", hp: 820, mp: "0/60",  ad: 95,  armor: 34, mr: 34, range: 5, skill: "混沌之弓",   ability: { type: "burst",  value: 380, desc: "燭龍之箭造成 380 點術法傷害" },                    color: "#ecc94b" },
+  { id: 35, name: "吞佛童子", cost: 4, origin: "異度魔界", class: "刺客", hp: 900, mp: "30/80", ad: 88,  armor: 40, mr: 38, range: 1, skill: "朱厭殺道",   ability: { type: "aoe",    value: 310, radius: 80, desc: "紅蓮蝕日造成 310 點範圍傷害" },              color: "#e53e3e" },
+  { id: 36, name: "伏嬰師",   cost: 4, origin: "異度魔界", class: "術法", hp: 800, mp: "40/100", ad: 56, armor: 36, mr: 40, range: 4, skill: "式神召喚·骨昌", ability: { type: "aoe", value: 360, radius: 95, desc: "式神降臨造成 360 點大範圍傷害" },             color: "#e53e3e" },
+  { id: 37, name: "九禍",     cost: 4, origin: "異度魔界", class: "醫者", hp: 850, mp: "30/80", ad: 60,  armor: 40, mr: 42, range: 3, skill: "魔女之佑",   ability: { type: "shield", value: 400, desc: "魔女之佑使全隊獲得 400 點護盾" },                 color: "#e53e3e" },
+  { id: 38, name: "赭杉軍",   cost: 4, origin: "玄宗道門", class: "重裝", group: "玄宗四奇", hp: 1050, mp: "50/100", ad: 74, armor: 54, mr: 56, range: 1, skill: "紫霄騰龍",  ability: { type: "aoe",    value: 330, radius: 90, desc: "紫霄騰龍造成 330 點範圍傷害" },              color: "#4299e1" },
+  { id: 39, name: "釋雲生",   cost: 4, origin: "識界靈體", class: "劍者", hp: 900, mp: "0/50",  ad: 88,  armor: 40, mr: 40, range: 1, skill: "雲生劍",     ability: { type: "burst",  value: 330, desc: "雲生一劍造成 330 點術法傷害" },                    color: "#38b2ac" },
+  { id: 40, name: "尹秋君（紫荊衣）", cost: 4, origin: "玄宗道門", class: "術法", group: "玄宗四奇", hp: 820, mp: "50/120", ad: 56, armor: 36, mr: 40, range: 4, skill: "紫荊劍印",  ability: { type: "aoe",    value: 370, radius: 100, desc: "紫荊劍印造成 370 點大範圍傷害" },             color: "#4299e1" },
+  { id: 41, name: "曌雲裳",   cost: 4, origin: "紅樓劍閣", class: "劍者", hp: 950, mp: "0/60",  ad: 96,  armor: 44, mr: 42, range: 1, skill: "狂躁劍意",   ability: { type: "buff",   value: 55,  desc: "狂躁劍意使自身攻擊力提升 55%，持續 6 秒" },        color: "#d53f8c" },
+  { id: 42, name: "軒轅不敗", cost: 4, origin: "獨立梟雄", class: "重裝", hp: 1150, mp: "0/80", ad: 78,  armor: 58, mr: 56, range: 1, skill: "玄功反彈",   ability: { type: "shield", value: 460, desc: "玄功護體獲得 460 點護盾" },                       color: "#805ad5" },
 
-    // --- 5 費 (Cost 5) ---
-    { id: 34, name: "一頁書", cost: 5, origin: "苦境正道", class: "術士", hp: 1100, mp: "50/130", ad: 70, armor: 50, mr: 50, range: 4, skill: "八部龍神火" },
-    { id: 35, name: "素還真", cost: 5, origin: "苦境正道", class: "術士", hp: 1050, mp: "40/120", ad: 65, armor: 45, mr: 45, range: 4, skill: "蓮華聖路開天光" },
-    { id: 36, name: "銀鍠朱武", cost: 5, origin: "異度魔界", class: "劍客/重裝", hp: 1300, mp: "30/90", ad: 100, armor: 60, mr: 60, range: 1, skill: "貫天神擊" },
-    { id: 37, name: "蒼", cost: 5, origin: "玄宗道門", class: "術士", hp: 1000, mp: "60/120", ad: 65, armor: 45, mr: 45, range: 4, skill: "伏天宗陣·怒滄琴" },
-    { id: 38, name: "柳生劍影", cost: 5, origin: "東瀛武林", class: "劍客", hp: 1150, mp: "0/70", ad: 110, armor: 50, mr: 50, range: 1, skill: "萬道森羅" },
-    { id: 39, name: "源武藏", cost: 5, origin: "東瀛武林", class: "重裝", hp: 1400, mp: "0/100", ad: 90, armor: 70, mr: 70, range: 1, skill: "神之光/返返歸一" },
+  // ======================= 5 費 =======================
+  { id: 43, name: "一頁書",   cost: 5, origin: "苦境正道", class: "佛門", hp: 1100, mp: "50/130", ad: 72, armor: 52, mr: 56, range: 4, skill: "八部龍神火", ability: { type: "aoe",   value: 520, radius: 110, desc: "八部龍神火焚盡大範圍敵人 520 點" },           color: "#ecc94b" },
+  { id: 44, name: "素還真",   cost: 5, origin: "苦境正道", class: "術法", hp: 1050, mp: "40/120", ad: 68, armor: 46, mr: 50, range: 4, skill: "蓮華聖路開天光", ability: { type: "aoe", value: 500, radius: 105, desc: "開天聖光造成 500 點大範圍傷害" },          color: "#ecc94b" },
+  { id: 45, name: "佛劍分說", cost: 5, origin: "苦境正道", class: "佛門", hp: 1250, mp: "30/100", ad: 100, armor: 54, mr: 54, range: 1, skill: "殺生為護生", ability: { type: "burst", value: 480, desc: "誅魔佛劍造成 480 點術法傷害" },               color: "#ecc94b" },
+  { id: 46, name: "銀鍠朱武", cost: 5, origin: "異度魔界", class: "劍者", hp: 1300, mp: "30/90", ad: 104, armor: 60, mr: 58, range: 1, skill: "貫天神擊",  ability: { type: "aoe",    value: 460, radius: 100, desc: "貫天神擊造成 460 點範圍傷害" },              color: "#e53e3e" },
+  { id: 47, name: "襲滅天來", cost: 5, origin: "異度魔界", class: "魔道", hp: 1200, mp: "40/110", ad: 96, armor: 54, mr: 56, range: 2, skill: "死神過境",  ability: { type: "aoe",    value: 490, radius: 105, desc: "死神過境吞噬範圍敵人 490 點" },              color: "#e53e3e" },
+  { id: 48, name: "蒼",       cost: 5, origin: "玄宗道門", class: "術法", hp: 1000, mp: "60/120", ad: 66, armor: 46, mr: 50, range: 4, skill: "伏天宗陣·怒滄琴", ability: { type: "aoe", value: 540, radius: 110, desc: "怒滄琴音造成 540 點大範圍傷害" },         color: "#4299e1" },
+  { id: 49, name: "柳生劍影", cost: 5, origin: "東瀛",     class: "劍者", hp: 1150, mp: "0/70",  ad: 108, armor: 50, mr: 48, range: 1, skill: "萬道森羅",  ability: { type: "aoe",    value: 450, radius: 95, desc: "萬道森羅造成 450 點範圍傷害" },              color: "#dd6b20" },
+  { id: 50, name: "源武藏",   cost: 5, origin: "東瀛",     class: "重裝", hp: 1500, mp: "0/100", ad: 92,  armor: 74, mr: 72, range: 1, skill: "神之一擊",  ability: { type: "aoe",    value: 430, radius: 100, desc: "神之光芒造成 430 點範圍傷害" },              color: "#dd6b20" },
 
-    // --- 6 費 (Cost 6) ---
-    { id: 40, name: "棄天帝", cost: 6, origin: "異度魔界", class: "神級", hp: 2000, mp: "50/150", ad: 150, armor: 80, mr: 80, range: 5, skill: "神之光 / 神之手" }
+  // ======================= 6 費（神級） =======================
+  { id: 51, name: "棄天帝",   cost: 6, origin: "異度魔界", class: "魔道", hp: 2200, mp: "50/150", ad: 155, armor: 84, mr: 84, range: 5, skill: "神之光 / 神之手", ability: { type: "aoe", value: 900, radius: 140, desc: "神之滅絕：對超大範圍敵人造成 900 點毀滅傷害" }, color: "#f56565" }
 ];
 
-// 羈絆等級觸發門檻
-const SYNERGY_THRESHOLDS = {
-    "苦境正道": [2, 4, 6, 8],
-    "異度魔界": [3, 5, 7, 9],
-    "玄宗道門": [2, 4, 6],
-    "東瀛武林": [2, 4, 6],
-    "紅樓劍閣": [2, 3, 4],
-    "識界靈體": [2, 4],
-    "劍客": [2, 4, 6, 8],
-    "術士": [2, 4, 6],
-    "重裝": [2, 4, 6],
-    "刺客": [2, 4],
-    "醫者/輔助": [2, 3],
-    "獨立梟雄": [1],
-    "神級": [1]
+/* --------------------------- 羈絆系統定義 --------------------------- *
+ * type: "origin"（陣營）| "class"（職業）| "special"（特殊）
+ * tiers: 每個門檻對應的效果描述（與 thresholds 一一對應）
+ * effect: 戰鬥引擎讀取的效果鍵
+ * ------------------------------------------------------------------- */
+const SYNERGIES = {
+  /* ============ 陣營類（Origin） ============ */
+  "苦境正道": { type: "origin", icon: "☯", color: "#ecc94b", effect: "shield", thresholds: [2, 4, 6], values: [150, 350, 650],
+    tiers: ["開戰時全隊獲得 150 點護盾", "開戰時全隊獲得 350 點護盾", "開戰時全隊獲得 650 點護盾並 +20 雙防"] },
+  "異度魔界": { type: "origin", icon: "👹", color: "#e53e3e", effect: "lifesteal", thresholds: [3, 5], values: [15, 30],
+    tiers: ["全體攻擊附加 20 魔傷且吸血 15%", "全體攻擊附加 45 魔傷且吸血 30%"] },
+  "玄宗道門": { type: "origin", icon: "✦", color: "#4299e1", effect: "spellpower", thresholds: [2, 4], values: [35, 80],
+    tiers: ["技能傷害 +35%，開戰 +15 魔力", "技能傷害 +80%，開戰 +30 魔力"] },
+  "東瀛":     { type: "origin", icon: "⛩", color: "#dd6b20", effect: "attackspeed", thresholds: [2, 4], values: [12, 28],
+    tiers: ["全體攻速 +12%", "全體攻速 +28%"] },
+  "紅樓劍閣": { type: "origin", icon: "🌸", color: "#d53f8c", effect: "critchance", thresholds: [2, 3], values: [20, 45],
+    tiers: ["全體暴擊率 +20%", "全體暴擊率 +45%"] },
+  "識界靈體": { type: "origin", icon: "◈", color: "#38b2ac", effect: "dmgamp", thresholds: [2, 4], values: [10, 25],
+    tiers: ["全隊造成傷害 +10%", "全隊造成傷害 +25%"] },
+  "獨立梟雄": { type: "origin", icon: "⚑", color: "#805ad5", effect: "solo", thresholds: [1, 2], values: [8, 18],
+    tiers: ["每名獨立梟雄使全隊攻擊 +8%", "每名獨立梟雄使全隊攻擊 +18%"] },
+
+  /* ============ 職業類（Class） ============ */
+  "劍者": { type: "class", icon: "⚔", color: "#e2e8f0", effect: "ad", thresholds: [2, 4, 6], values: [20, 45, 80],
+    tiers: ["劍者攻擊力 +20", "劍者攻擊力 +45", "劍者攻擊力 +80"] },
+  "刀者": { type: "class", icon: "🗡", color: "#f6ad55", effect: "splash", thresholds: [2, 4], values: [35, 70],
+    tiers: ["普攻濺射 35% 並破甲 15", "普攻濺射 70% 並破甲 35"] },
+  "術法": { type: "class", icon: "✷", color: "#63b3ed", effect: "spellpower", thresholds: [2, 4], values: [25, 60],
+    tiers: ["技能傷害 +25%，施法後回魔 20", "技能傷害 +60%，施法後回魔 40"] },
+  "佛門": { type: "class", icon: "卍", color: "#f6e05e", effect: "dr", thresholds: [2, 3, 4], values: [10, 20, 35],
+    tiers: ["全體受到傷害 -10%", "全體受到傷害 -20%", "全體受到傷害 -35%，且每 2 秒回血 40"] },
+  "魔道": { type: "class", icon: "☠", color: "#fc8181", effect: "dmgamp", thresholds: [2, 3], values: [18, 40],
+    tiers: ["魔道造成傷害 +18%", "魔道造成傷害 +40%"] },
+  "弓者": { type: "class", icon: "🏹", color: "#68d391", effect: "ranger", thresholds: [2, 3], values: [15, 35],
+    tiers: ["弓者射程 +1、暴擊率 +15%、攻速 +15%", "弓者射程 +1、暴擊率 +35%、攻速 +25%"] },
+  "醫者": { type: "class", icon: "✚", color: "#9ae6b4", effect: "regen", thresholds: [2, 3], values: [25, 60],
+    tiers: ["全隊每秒回血 25", "全隊每秒回血 60"] },
+  "刺客": { type: "class", icon: "🔪", color: "#b794f4", effect: "assassin", thresholds: [2, 3], values: [40, 90],
+    tiers: ["刺客開場躍至敵後排，暴擊傷害 +40%", "刺客開場躍至敵後排，暴擊傷害 +90%"] },
+  "重裝": { type: "class", icon: "🛡", color: "#a0aec0", effect: "armor", thresholds: [2, 4], values: [40, 90],
+    tiers: ["重裝 +40 護甲與魔防", "重裝 +90 護甲與魔防"] },
+
+  /* ============ 特殊 ============ */
+  "神級": { type: "special", icon: "★", color: "#f56565", effect: "god", thresholds: [1], values: [25],
+    tiers: ["降臨：全隊造成傷害 +25%、受到傷害 -25%"] }
 };
-// 各等級刷新 1~6 費角色的概率表 (%)
+
+/* 舊介面相容：僅取門檻 */
+const SYNERGY_THRESHOLDS = {};
+Object.keys(SYNERGIES).forEach(k => { SYNERGY_THRESHOLDS[k] = SYNERGIES[k].thresholds; });
+
+/* ---------------- 各等級刷新 1~6 費角色的機率表 (%) ---------------- */
 const DROP_RATES = {
-    1: [100,  0,  0,  0,  0, 0], // 1等：100% 1費
-    2: [100,  0,  0,  0,  0, 0], // 2等：100% 1費
-    3: [ 75, 25,  0,  0,  0, 0], // 3等：75% 1費, 25% 2費
-    4: [ 55, 30, 15,  0,  0, 0],
-    5: [ 45, 33, 20,  2,  0, 0],
-    6: [ 30, 40, 25,  5,  0, 0],
-    7: [ 19, 35, 35, 10,  1, 0],
-    8: [ 18, 25, 36, 18,  3, 0], // 8等才有 3% 出 5費 (一頁書/素還真)
-    9: [ 10, 20, 25, 35,  9, 1]  // 9等才有 1% 出 6費 (棄天帝)
+  1: [100,   0,   0,   0,  0, 0],
+  2: [100,   0,   0,   0,  0, 0],
+  3: [ 75,  25,   0,   0,  0, 0],
+  4: [ 55,  30,  15,   0,  0, 0],
+  5: [ 45,  33,  20,   2,  0, 0],
+  6: [ 30,  40,  25,   5,  0, 0],
+  7: [ 19,  35,  35,  10,  1, 0],
+  8: [ 18,  25,  36,  18,  3, 0],
+  9: [ 10,  20,  25,  35,  9, 1]
 };
+
+/* ------------------------------ 升級經驗表 ------------------------------ */
+const EXP_TABLE = [0, 2, 4, 8, 16, 24, 36, 56, 80]; // 升到 (index+1) 級所需經驗
+
+/* ------------------------------ 回合/關卡表 ------------------------------
+ * count : 敵方單位數
+ * tier  : 敵方角色最高費用
+ * star  : 敵方基礎星級
+ * hpMul : 敵方血量倍率（隨回合成長）
+ * ----------------------------------------------------------------------- */
+const ROUNDS = [
+  { stage: "1-1", count: 3, tier: 1, star: 1, hpMul: 1.00 },
+  { stage: "1-2", count: 4, tier: 1, star: 1, hpMul: 1.10 },
+  { stage: "2-1", count: 4, tier: 2, star: 1, hpMul: 1.20 },
+  { stage: "2-2", count: 5, tier: 2, star: 1, hpMul: 1.35 },
+  { stage: "3-1", count: 5, tier: 2, star: 2, hpMul: 1.50 },
+  { stage: "3-2", count: 6, tier: 3, star: 1, hpMul: 1.65 },
+  { stage: "4-1", count: 6, tier: 3, star: 2, hpMul: 1.85 },
+  { stage: "4-2", count: 7, tier: 3, star: 2, hpMul: 2.05 },
+  { stage: "5-1", count: 7, tier: 4, star: 2, hpMul: 2.30 },
+  { stage: "5-2", count: 7, tier: 4, star: 2, hpMul: 2.55 },
+  { stage: "6-1", count: 8, tier: 4, star: 3, hpMul: 2.85 },
+  { stage: "6-2", count: 8, tier: 5, star: 2, hpMul: 3.20 },
+  { stage: "7-1", count: 8, tier: 5, star: 3, hpMul: 3.60 },
+  { stage: "7-2", count: 9, tier: 5, star: 3, hpMul: 4.05 },
+  { stage: "8-1", count: 9, tier: 6, star: 3, hpMul: 4.60 },
+  { stage: "8-2", count: 9, tier: 6, star: 3, hpMul: 5.20 }
+];
